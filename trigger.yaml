@@ -3,4 +3,4 @@ filename: cloudbuild.yaml
 repositoryEventConfig:
   repository: projects/nazonator/locations/asia-northeast1/connections/nazonator-github/repositories/nazonator-github-nazonator
   push:
-    branch: ^release$
+    branch: "^release$"
