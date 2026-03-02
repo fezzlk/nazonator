@@ -22,6 +22,8 @@ export function useChat() {
       content: string,
       growthLevel: number,
       learnings?: Learning[],
+      principles?: Learning[],
+      logics?: Learning[],
       onComplete?: (fullText: string) => void,
     ) => {
       if (!content.trim() || state.isLoading) return;
@@ -48,9 +50,9 @@ export function useChat() {
         }));
 
         const requestBody: Record<string, unknown> = { messages: messagesForApi, growthLevel };
-        if (learnings && learnings.length > 0) {
-          requestBody.learnings = learnings;
-        }
+        if (learnings && learnings.length > 0) requestBody.learnings = learnings;
+        if (principles && principles.length > 0) requestBody.principles = principles;
+        if (logics && logics.length > 0) requestBody.logics = logics;
         const storedApiKey = getStoredApiKey();
         if (storedApiKey) requestBody.apiKey = storedApiKey;
 
@@ -121,6 +123,15 @@ export function useChat() {
     });
   }, []);
 
+  const loadSession = useCallback((messages: Message[]) => {
+    setState({
+      messages,
+      isLoading: false,
+      streamingContent: '',
+      error: null,
+    });
+  }, []);
+
   return {
     messages: state.messages,
     isLoading: state.isLoading,
@@ -128,5 +139,6 @@ export function useChat() {
     error: state.error,
     sendMessage,
     clearMessages,
+    loadSession,
   };
 }

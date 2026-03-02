@@ -1,15 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { RotateCcw, BookOpen, Settings } from 'lucide-react';
+import { RotateCcw, BookOpen, Settings, History } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { LearningCardsPanel } from '@/components/learning/LearningCardsPanel';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
+import { SessionHistoryPanel } from '@/components/history/SessionHistoryPanel';
 import { AIAvatar } from '@/components/ai/AIAvatar';
 import type { Message } from '@/types/chat';
 import type { GrowthLevel } from '@/types/ai';
 import type { Learning } from '@/types/learning';
+import type { SessionSummary } from '@/lib/sessions';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 import { cn } from '@/lib/utils';
 
@@ -21,12 +23,23 @@ interface ChatContainerProps {
   currentLevel: GrowthLevel;
   solvedCount: number;
   learnings: Learning[];
+  principles: Learning[];
+  logics: Learning[];
   badgeFlash: boolean;
+  sessions: SessionSummary[];
   onSend: (content: string) => void;
   onReset: () => void;
   onRemoveLearning: (id: string) => void;
   onUpdateLearning: (id: string, content: string) => void;
   onClearLearnings: () => void;
+  onAddPrinciple: (content: string) => void;
+  onRemovePrinciple: (id: string) => void;
+  onUpdatePrinciple: (id: string, content: string) => void;
+  onAddLogic: (content: string) => void;
+  onRemoveLogic: (id: string) => void;
+  onUpdateLogic: (id: string, content: string) => void;
+  onResumeSession: (sessionId: string) => void;
+  onRemoveSession: (sessionId: string) => void;
 }
 
 export function ChatContainer({
@@ -37,15 +50,29 @@ export function ChatContainer({
   currentLevel,
   solvedCount,
   learnings,
+  principles,
+  logics,
   badgeFlash,
+  sessions,
   onSend,
   onReset,
   onRemoveLearning,
   onUpdateLearning,
   onClearLearnings,
+  onAddPrinciple,
+  onRemovePrinciple,
+  onUpdatePrinciple,
+  onAddLogic,
+  onRemoveLogic,
+  onUpdateLogic,
+  onResumeSession,
+  onRemoveSession,
 }: ChatContainerProps) {
   const [panelOpen, setPanelOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const totalCards = learnings.length + principles.length + logics.length;
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -73,8 +100,16 @@ export function ChatContainer({
                 badgeFlash && 'animate-bounce',
               )}
             >
-              {learnings.length}
+              {totalCards}
             </span>
+          </button>
+          <button
+            onClick={() => setHistoryOpen((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-indigo-50"
+            title="セッション履歴"
+          >
+            <History className="w-3.5 h-3.5" />
+            履歴
           </button>
           <button
             onClick={() => setSettingsOpen((v) => !v)}
@@ -112,11 +147,28 @@ export function ChatContainer({
       {/* Learning Cards Panel */}
       <LearningCardsPanel
         learnings={learnings}
+        principles={principles}
+        logics={logics}
         onRemove={onRemoveLearning}
         onUpdate={onUpdateLearning}
         onClear={onClearLearnings}
+        onAddPrinciple={onAddPrinciple}
+        onRemovePrinciple={onRemovePrinciple}
+        onUpdatePrinciple={onUpdatePrinciple}
+        onAddLogic={onAddLogic}
+        onRemoveLogic={onRemoveLogic}
+        onUpdateLogic={onUpdateLogic}
         isOpen={panelOpen}
         onClose={() => setPanelOpen(false)}
+      />
+
+      {/* Session History Panel */}
+      <SessionHistoryPanel
+        sessions={sessions}
+        isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onResume={onResumeSession}
+        onRemove={onRemoveSession}
       />
 
       {/* Settings Panel */}

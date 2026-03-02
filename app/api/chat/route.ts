@@ -33,13 +33,13 @@ function pseudoStream(content: string): Response {
 export async function POST(req: NextRequest) {
   try {
     const body: ChatRequest = await req.json();
-    const { messages, growthLevel, learnings, apiKey } = body;
+    const { messages, growthLevel, learnings, principles, logics, apiKey } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
     }
 
-    const systemPrompt = buildSystemPrompt(growthLevel ?? 1, learnings);
+    const systemPrompt = buildSystemPrompt(growthLevel ?? 1, learnings, principles, logics);
     const openai = getOpenAIClient(apiKey);
 
     const systemMsg: ChatCompletionMessageParam = { role: 'system', content: systemPrompt };

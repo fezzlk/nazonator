@@ -7,6 +7,7 @@ import { LevelUpNotice } from '@/components/ai/LevelUpNotice';
 import { useChat } from '@/hooks/useChat';
 import { useUserData } from '@/hooks/useUserData';
 import { useExtraction } from '@/hooks/useExtraction';
+import { useSessionHistory } from '@/hooks/useSessionHistory';
 import { useAuth } from '@/context/AuthContext';
 import { getLevelByCount, SOLVED_TRIGGER_PHRASES } from '@/prompts/constants';
 
@@ -27,11 +28,29 @@ export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const { messages, isLoading, streamingContent, error, sendMessage, clearMessages } = useChat();
-  const { solvedCount, learnings, dataLoading, incrementSolved, addLearning, removeLearning, updateLearning, clearLearnings } =
-    useUserData(user?.uid ?? null);
+  const { messages, isLoading, streamingContent, error, sendMessage, clearMessages, loadSession } = useChat();
+  const {
+    solvedCount,
+    learnings,
+    principles,
+    logics,
+    dataLoading,
+    incrementSolved,
+    addLearning,
+    removeLearning,
+    updateLearning,
+    clearLearnings,
+    addPrinciple,
+    removePrinciple,
+    updatePrinciple,
+    addLogic,
+    removeLogic,
+    updateLogic,
+  } = useUserData(user?.uid ?? null);
 
   const { triggerExtraction } = useExtraction({ learnings, addLearning });
+  const { sessions, saveCurrentSession, startResumingSession, resetSession, loadSessionMessages, removeSession } =
+    useSessionHistory(user?.uid ?? null);
 
   const [isLevelingUp, setIsLevelingUp] = useState(false);
   const [prevSolvedCount, setPrevSolvedCount] = useState(solvedCount);
@@ -73,25 +92,36 @@ export default function ChatPage() {
     (content: string) => {
       const preMessages = messages;
 
-      sendMessage(content, currentLevel.level, learnings, (fullText) => {
+      sendMessage(content, currentLevel.level, learnings, principles, logics, (fullText) => {
         if (checkIfSolved(fullText)) {
           incrementSolved();
         }
 
         const fullContext = [
           ...preMessages,
-          { id: '', role: 'user' as const, content, timestamp: new Date() },
-          { id: '', role: 'assistant' as const, content: fullText, timestamp: new Date() },
+          { id: `${Date.now()}-u`, role: 'user' as const, content, timestamp: new Date() },
+          { id: `${Date.now()}-a`, role: 'assistant' as const, content: fullText, timestamp: new Date() },
         ];
         triggerExtraction(fullContext);
+        saveCurrentSession(fullContext);
       });
     },
-    [sendMessage, currentLevel.level, learnings, incrementSolved, messages, triggerExtraction],
+    [sendMessage, currentLevel.level, learnings, principles, logics, incrementSolved, messages, triggerExtraction, saveCurrentSession],
   );
 
   const handleReset = useCallback(() => {
     clearMessages();
-  }, [clearMessages]);
+    resetSession();
+  }, [clearMessages, resetSession]);
+
+  const handleResumeSession = useCallback(
+    async (sessionId: string) => {
+      const sessionMessages = await loadSessionMessages(sessionId);
+      loadSession(sessionMessages);
+      startResumingSession(sessionId);
+    },
+    [loadSessionMessages, loadSession, startResumingSession],
+  );
 
   if (authLoading || dataLoading) return <LoadingScreen />;
   if (!user) return null;
@@ -107,12 +137,23 @@ export default function ChatPage() {
         currentLevel={currentLevel}
         solvedCount={solvedCount}
         learnings={learnings}
+        principles={principles}
+        logics={logics}
         badgeFlash={badgeFlash}
+        sessions={sessions}
         onSend={handleSend}
         onReset={handleReset}
         onRemoveLearning={removeLearning}
         onUpdateLearning={updateLearning}
         onClearLearnings={clearLearnings}
+        onAddPrinciple={addPrinciple}
+        onRemovePrinciple={removePrinciple}
+        onUpdatePrinciple={updatePrinciple}
+        onAddLogic={addLogic}
+        onRemoveLogic={removeLogic}
+        onUpdateLogic={updateLogic}
+        onResumeSession={handleResumeSession}
+        onRemoveSession={removeSession}
       />
     </>
   );

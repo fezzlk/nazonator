@@ -1,14 +1,29 @@
 import { GROWTH_LEVELS } from './constants';
 import type { Learning } from '@/types/learning';
 
-function buildLearningsSection(learnings?: Learning[]): string {
-  if (!learnings || learnings.length === 0) return '';
-  const lines = learnings.map((l) => `- ${l.content}`).join('\n');
-  return `\n\n## ユーザーからのアドバイス\n以下を参考にしてください：\n${lines}`;
+function buildSection(title: string, items: Learning[]): string {
+  if (items.length === 0) return '';
+  const lines = items.map((l) => `- ${l.content}`).join('\n');
+  return `\n\n## ${title}\n${lines}`;
 }
 
-export function buildSystemPrompt(growthLevel: number, learnings?: Learning[]): string {
+export function buildSystemPrompt(
+  growthLevel: number,
+  learnings?: Learning[],
+  principles?: Learning[],
+  logics?: Learning[],
+): string {
   const level = GROWTH_LEVELS.find((l) => l.level === growthLevel) ?? GROWTH_LEVELS[0];
+
+  const principlesSection = principles?.length
+    ? buildSection('謎解きの原則（常に意識する基本ルール）', principles)
+    : '';
+  const logicsSection = logics?.length
+    ? buildSection('変換操作ロジック（文字変換の基本ルール）', logics)
+    : '';
+  const learningsSection = learnings?.length
+    ? buildSection('ユーザーからのアドバイス（テクニック）', learnings)
+    : '';
 
   return `あなたは謎解きに挑戦するAIです。ユーザーが謎を出題し、あなたが解こうとします。現在のあなたの状態：「${level.name}（レベル${level.level}）」
 
@@ -35,5 +50,5 @@ ${level.description}
 - 「また一つ成長できた！」という言葉でAIとしての成長を表現してください
 - 次の謎への意欲を示してください
 
-現在のトーン：${level.tone}${buildLearningsSection(learnings)}`;
+現在のトーン：${level.tone}${principlesSection}${logicsSection}${learningsSection}`;
 }
