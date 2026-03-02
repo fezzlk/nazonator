@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { RotateCcw, BookOpen } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
-import { LearningModal } from './LearningModal';
+import { LearningCardsPanel } from '@/components/learning/LearningCardsPanel';
 import { AIAvatar } from '@/components/ai/AIAvatar';
 import type { Message } from '@/types/chat';
 import type { GrowthLevel } from '@/types/ai';
 import type { Learning } from '@/types/learning';
 import { LogoutButton } from '@/components/auth/LogoutButton';
+import { cn } from '@/lib/utils';
 
 interface ChatContainerProps {
   messages: Message[];
@@ -19,10 +20,11 @@ interface ChatContainerProps {
   currentLevel: GrowthLevel;
   solvedCount: number;
   learnings: Learning[];
+  badgeFlash: boolean;
   onSend: (content: string) => void;
   onReset: () => void;
-  onAddLearning: (content: string) => void;
   onRemoveLearning: (id: string) => void;
+  onUpdateLearning: (id: string, content: string) => void;
   onClearLearnings: () => void;
 }
 
@@ -34,13 +36,14 @@ export function ChatContainer({
   currentLevel,
   solvedCount,
   learnings,
+  badgeFlash,
   onSend,
   onReset,
-  onAddLearning,
   onRemoveLearning,
+  onUpdateLearning,
   onClearLearnings,
 }: ChatContainerProps) {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -55,17 +58,21 @@ export function ChatContainer({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={() => setPanelOpen((v) => !v)}
             className="relative flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-indigo-50"
-            title="AIに知識を教える"
+            title="学習カードを見る"
           >
             <BookOpen className="w-3.5 h-3.5" />
-            AIに教える
-            {learnings.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                {learnings.length}
-              </span>
-            )}
+            学習カード
+            <span
+              className={cn(
+                'text-[11px] font-bold px-1.5 py-0.5 rounded-full',
+                learnings.length > 0 ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-500',
+                badgeFlash && 'animate-bounce',
+              )}
+            >
+              {learnings.length}
+            </span>
           </button>
           <button
             onClick={onReset}
@@ -80,12 +87,7 @@ export function ChatContainer({
       </header>
 
       {/* Messages */}
-      <MessageList
-        messages={messages}
-        isLoading={isLoading}
-        streamingContent={streamingContent}
-        onCourseCorrect={onAddLearning}
-      />
+      <MessageList messages={messages} isLoading={isLoading} streamingContent={streamingContent} />
 
       {/* Error */}
       {error && (
@@ -97,16 +99,15 @@ export function ChatContainer({
       {/* Input */}
       <ChatInput onSend={onSend} disabled={isLoading} />
 
-      {/* Learning Modal */}
-      {modalOpen && (
-        <LearningModal
-          learnings={learnings}
-          onAdd={onAddLearning}
-          onRemove={onRemoveLearning}
-          onClear={onClearLearnings}
-          onClose={() => setModalOpen(false)}
-        />
-      )}
+      {/* Learning Cards Panel */}
+      <LearningCardsPanel
+        learnings={learnings}
+        onRemove={onRemoveLearning}
+        onUpdate={onUpdateLearning}
+        onClear={onClearLearnings}
+        isOpen={panelOpen}
+        onClose={() => setPanelOpen(false)}
+      />
     </div>
   );
 }
