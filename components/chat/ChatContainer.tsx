@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { RotateCcw, BookOpen } from 'lucide-react';
+import { RotateCcw, BookOpen, Settings } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { LearningCardsPanel } from '@/components/learning/LearningCardsPanel';
+import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { AIAvatar } from '@/components/ai/AIAvatar';
 import type { Message } from '@/types/chat';
 import type { GrowthLevel } from '@/types/ai';
@@ -44,6 +45,7 @@ export function ChatContainer({
   onClearLearnings,
 }: ChatContainerProps) {
   const [panelOpen, setPanelOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -73,6 +75,14 @@ export function ChatContainer({
             >
               {learnings.length}
             </span>
+          </button>
+          <button
+            onClick={() => setSettingsOpen((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-indigo-50"
+            title="設定"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            設定
           </button>
           <button
             onClick={onReset}
@@ -108,6 +118,9 @@ export function ChatContainer({
         isOpen={panelOpen}
         onClose={() => setPanelOpen(false)}
       />
+
+      {/* Settings Panel */}
+      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
