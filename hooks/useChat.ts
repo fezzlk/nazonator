@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import type { Message, ChatState } from '@/types/chat';
 import type { Learning } from '@/types/learning';
+import { getStoredApiKey } from '@/lib/apiKey';
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -50,6 +51,8 @@ export function useChat() {
         if (learnings && learnings.length > 0) {
           requestBody.learnings = learnings;
         }
+        const storedApiKey = getStoredApiKey();
+        if (storedApiKey) requestBody.apiKey = storedApiKey;
 
         const response = await fetch('/api/chat', {
           method: 'POST',

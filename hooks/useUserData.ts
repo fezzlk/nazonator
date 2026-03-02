@@ -17,6 +17,7 @@ type Action =
   | { type: 'INCREMENT_SOLVED' }
   | { type: 'ADD_LEARNING'; content: string }
   | { type: 'REMOVE_LEARNING'; id: string }
+  | { type: 'UPDATE_LEARNING'; id: string; content: string }
   | { type: 'CLEAR_LEARNINGS' };
 
 function reducer(state: State, action: Action): State {
@@ -38,6 +39,14 @@ function reducer(state: State, action: Action): State {
     }
     case 'REMOVE_LEARNING':
       return { ...state, learnings: state.learnings.filter((l) => l.id !== action.id) };
+    case 'UPDATE_LEARNING': {
+      const trimmed = action.content.trim().slice(0, MAX_CONTENT_LENGTH);
+      if (!trimmed) return state;
+      return {
+        ...state,
+        learnings: state.learnings.map((l) => (l.id === action.id ? { ...l, content: trimmed } : l)),
+      };
+    }
     case 'CLEAR_LEARNINGS':
       return { ...state, learnings: [] };
     default:
@@ -52,6 +61,7 @@ export interface UseUserDataReturn {
   incrementSolved: () => void;
   addLearning: (content: string) => void;
   removeLearning: (id: string) => void;
+  updateLearning: (id: string, content: string) => void;
   clearLearnings: () => void;
 }
 
@@ -86,6 +96,10 @@ export function useUserData(uid: string | null): UseUserDataReturn {
   const incrementSolved = useCallback(() => dispatch({ type: 'INCREMENT_SOLVED' }), []);
   const addLearning = useCallback((content: string) => dispatch({ type: 'ADD_LEARNING', content }), []);
   const removeLearning = useCallback((id: string) => dispatch({ type: 'REMOVE_LEARNING', id }), []);
+  const updateLearning = useCallback(
+    (id: string, content: string) => dispatch({ type: 'UPDATE_LEARNING', id, content }),
+    [],
+  );
   const clearLearnings = useCallback(() => dispatch({ type: 'CLEAR_LEARNINGS' }), []);
 
   // レベルアップ検出は ChatPage 側で行うため、ここでは返さない
@@ -96,6 +110,7 @@ export function useUserData(uid: string | null): UseUserDataReturn {
     incrementSolved,
     addLearning,
     removeLearning,
+    updateLearning,
     clearLearnings,
   };
 }

@@ -11,6 +11,7 @@ export interface ChatRequest {
   messages: Omit<Message, 'id' | 'timestamp'>[];
   growthLevel: number;
   learnings?: import('@/types/learning').Learning[];
+  apiKey?: string;
 }
 
 export interface ChatState {
