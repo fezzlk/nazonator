@@ -54,7 +54,7 @@ export function LearningModal({ learnings, onAdd, onRemove, onClear, onClose }: 
                 <span className="text-sm text-gray-700 flex-1 leading-snug">{l.content}</span>
                 <button
                   onClick={() => onRemove(l.id)}
-                  className="text-gray-300 hover:text-red-400 transition-colors mt-0.5 shrink-0"
+                  className="text-gray-400 hover:text-red-400 transition-colors mt-0.5 shrink-0"
                   title="削除"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -74,7 +74,7 @@ export function LearningModal({ learnings, onAdd, onRemove, onClear, onClose }: 
               onKeyDown={handleKeyDown}
               placeholder={atLimit ? `上限 ${MAX_LEARNINGS} 件に達しました` : 'アドバイスを入力…'}
               disabled={atLimit}
-              className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400 disabled:bg-gray-100 disabled:text-gray-400"
+              className="flex-1 text-sm text-gray-900 placeholder:text-gray-400 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:border-indigo-400 disabled:bg-gray-100 disabled:text-gray-400"
               maxLength={MAX_CONTENT_LENGTH}
             />
             <button
@@ -86,7 +86,7 @@ export function LearningModal({ learnings, onAdd, onRemove, onClear, onClose }: 
             </button>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-500">
               {learnings.length} / {MAX_LEARNINGS} 件　残り {remaining} 文字
             </span>
             {learnings.length > 0 && (

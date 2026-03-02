@@ -54,8 +54,8 @@ export function ChatInput({
           placeholder={placeholder}
           rows={1}
           className={cn(
-            'flex-1 resize-none rounded-xl border border-gray-300 px-4 py-2.5 text-sm leading-relaxed',
-            'focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent',
+            'flex-1 resize-none rounded-xl border border-gray-300 px-4 py-2.5 text-sm text-gray-900 leading-relaxed',
+            'placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent',
             'disabled:bg-gray-50 disabled:text-gray-400 transition-all',
             'min-h-[42px] max-h-[160px]',
           )}
@@ -73,7 +73,7 @@ export function ChatInput({
           <Send className="w-4 h-4" />
         </button>
       </div>
-      <p className="text-center text-xs text-gray-400 mt-2">
+      <p className="text-center text-xs text-gray-500 mt-2">
         Ctrl+Enter / Cmd+Enter で送信
       </p>
     </div>

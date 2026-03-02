@@ -40,7 +40,7 @@ export function CourseCorrectButton({ onSubmit }: CourseCorrectButtonProps) {
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="text-xs text-gray-400 hover:text-indigo-500 transition-colors mt-1 ml-1"
+        className="text-xs text-gray-500 hover:text-indigo-500 transition-colors mt-1 ml-1"
       >
         軌道修正
       </button>
@@ -56,7 +56,7 @@ export function CourseCorrectButton({ onSubmit }: CourseCorrectButtonProps) {
         onChange={(e) => setValue(e.target.value.slice(0, MAX_CONTENT_LENGTH))}
         onKeyDown={handleKeyDown}
         placeholder="AIへの修正アドバイスを入力… (Enter で登録)"
-        className="text-xs border border-gray-300 rounded px-2 py-1 w-72 focus:outline-none focus:border-indigo-400"
+        className="text-xs text-gray-900 placeholder:text-gray-400 border border-gray-300 rounded px-2 py-1 w-72 focus:outline-none focus:border-indigo-400"
         maxLength={MAX_CONTENT_LENGTH}
       />
       <button
@@ -68,7 +68,7 @@ export function CourseCorrectButton({ onSubmit }: CourseCorrectButtonProps) {
       </button>
       <button
         onClick={() => { setValue(''); setExpanded(false); }}
-        className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+        className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
       >
         キャンセル
       </button>
