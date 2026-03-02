@@ -42,11 +42,6 @@ steps:
       - "--update-secrets=OPENAI_API_KEY=openai-api-key:latest"
       - "--service-account=nazonator-run@nazonator.iam.gserviceaccount.com"
 
-availableSecrets:
-  secretManager:
-    - versionName: projects/nazonator/secrets/openai-api-key/versions/latest
-      env: OPENAI_API_KEY
-
 substitutions:
   _FIREBASE_API_KEY: ""
   _FIREBASE_AUTH_DOMAIN: ""
