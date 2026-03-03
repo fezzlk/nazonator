@@ -10,6 +10,7 @@ import { useExtraction } from '@/hooks/useExtraction';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
 import { useAuth } from '@/context/AuthContext';
 import { getLevelByCount, SOLVED_TRIGGER_PHRASES } from '@/prompts/constants';
+import type { AdditionMode } from '@/types/chat';
 
 function checkIfSolved(text: string): boolean {
   const lower = text.toLowerCase();
@@ -52,6 +53,7 @@ export default function ChatPage() {
   const { sessions, saveCurrentSession, startResumingSession, resetSession, loadSessionMessages, removeSession } =
     useSessionHistory(user?.uid ?? null);
 
+  const [additionMode, setAdditionMode] = useState<AdditionMode>(null);
   const [isLevelingUp, setIsLevelingUp] = useState(false);
   const [prevSolvedCount, setPrevSolvedCount] = useState(solvedCount);
   const [badgeFlash, setBadgeFlash] = useState(false);
@@ -91,10 +93,25 @@ export default function ChatPage() {
   const handleSend = useCallback(
     (content: string) => {
       const preMessages = messages;
+      const currentMode = additionMode;
 
-      sendMessage(content, currentLevel.level, learnings, principles, logics, (fullText) => {
-        if (checkIfSolved(fullText)) {
-          incrementSolved();
+      sendMessage(content, currentLevel.level, learnings, principles, logics, currentMode, (fullText) => {
+        // 追加モード時: AI応答をカードに追加
+        if (currentMode === 'principles') {
+          addPrinciple(fullText.trim());
+        } else if (currentMode === 'logics') {
+          addLogic(fullText.trim());
+        } else {
+          // 通常モード: 謎解き完了チェック + テクニック抽出
+          if (checkIfSolved(fullText)) {
+            incrementSolved();
+          }
+          const fullContext = [
+            ...preMessages,
+            { id: `${Date.now()}-u`, role: 'user' as const, content, timestamp: new Date() },
+            { id: `${Date.now()}-a`, role: 'assistant' as const, content: fullText, timestamp: new Date() },
+          ];
+          triggerExtraction(fullContext);
         }
 
         const fullContext = [
@@ -102,11 +119,23 @@ export default function ChatPage() {
           { id: `${Date.now()}-u`, role: 'user' as const, content, timestamp: new Date() },
           { id: `${Date.now()}-a`, role: 'assistant' as const, content: fullText, timestamp: new Date() },
         ];
-        triggerExtraction(fullContext);
         saveCurrentSession(fullContext);
       });
     },
-    [sendMessage, currentLevel.level, learnings, principles, logics, incrementSolved, messages, triggerExtraction, saveCurrentSession],
+    [
+      sendMessage,
+      currentLevel.level,
+      learnings,
+      principles,
+      logics,
+      additionMode,
+      incrementSolved,
+      messages,
+      triggerExtraction,
+      saveCurrentSession,
+      addPrinciple,
+      addLogic,
+    ],
   );
 
   const handleReset = useCallback(() => {
@@ -141,6 +170,8 @@ export default function ChatPage() {
         logics={logics}
         badgeFlash={badgeFlash}
         sessions={sessions}
+        additionMode={additionMode}
+        onModeChange={setAdditionMode}
         onSend={handleSend}
         onReset={handleReset}
         onRemoveLearning={removeLearning}

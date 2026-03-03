@@ -1,5 +1,6 @@
 import { GROWTH_LEVELS } from './constants';
 import type { Learning } from '@/types/learning';
+import type { AdditionMode } from '@/types/chat';
 
 function buildSection(title: string, items: Learning[]): string {
   if (items.length === 0) return '';
@@ -7,11 +8,23 @@ function buildSection(title: string, items: Learning[]): string {
   return `\n\n## ${title}\n${lines}`;
 }
 
+const ADDITION_MODE_INSTRUCTION: Record<NonNullable<AdditionMode>, string> = {
+  principles:
+    '\n\n## 特別指示（このターンのみ）\n' +
+    'ユーザーの入力内容を謎解きの**原則**として簡潔に一文にまとめてください。\n' +
+    'まとめた原則の文章のみを返答してください（前置き・説明は不要）。',
+  logics:
+    '\n\n## 特別指示（このターンのみ）\n' +
+    'ユーザーの入力内容を謎解きの**変換操作ロジック**として簡潔に一文にまとめてください。\n' +
+    'まとめたロジックの文章のみを返答してください（前置き・説明は不要）。',
+};
+
 export function buildSystemPrompt(
   growthLevel: number,
   learnings?: Learning[],
   principles?: Learning[],
   logics?: Learning[],
+  additionMode?: AdditionMode,
 ): string {
   const level = GROWTH_LEVELS.find((l) => l.level === growthLevel) ?? GROWTH_LEVELS[0];
 
@@ -24,6 +37,8 @@ export function buildSystemPrompt(
   const learningsSection = learnings?.length
     ? buildSection('ユーザーからのアドバイス（テクニック）', learnings)
     : '';
+
+  const additionInstruction = additionMode ? (ADDITION_MODE_INSTRUCTION[additionMode] ?? '') : '';
 
   return `あなたは謎解きに挑戦するAIです。ユーザーが謎を出題し、あなたが解こうとします。現在のあなたの状態：「${level.name}（レベル${level.level}）」
 
@@ -50,5 +65,5 @@ ${level.description}
 - 「また一つ成長できた！」という言葉でAIとしての成長を表現してください
 - 次の謎への意欲を示してください
 
-現在のトーン：${level.tone}${principlesSection}${logicsSection}${learningsSection}`;
+現在のトーン：${level.tone}${principlesSection}${logicsSection}${learningsSection}${additionInstruction}`;
 }

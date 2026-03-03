@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { Message, ChatState } from '@/types/chat';
+import type { Message, ChatState, AdditionMode } from '@/types/chat';
 import type { Learning } from '@/types/learning';
 import { getStoredApiKey } from '@/lib/apiKey';
 
@@ -24,6 +24,7 @@ export function useChat() {
       learnings?: Learning[],
       principles?: Learning[],
       logics?: Learning[],
+      additionMode?: AdditionMode,
       onComplete?: (fullText: string) => void,
     ) => {
       if (!content.trim() || state.isLoading) return;
@@ -53,6 +54,7 @@ export function useChat() {
         if (learnings && learnings.length > 0) requestBody.learnings = learnings;
         if (principles && principles.length > 0) requestBody.principles = principles;
         if (logics && logics.length > 0) requestBody.logics = logics;
+        if (additionMode) requestBody.additionMode = additionMode;
         const storedApiKey = getStoredApiKey();
         if (storedApiKey) requestBody.apiKey = storedApiKey;
 

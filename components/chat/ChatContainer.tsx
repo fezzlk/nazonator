@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { RotateCcw, BookOpen, Settings, History } from 'lucide-react';
+import { RotateCcw, BookOpen, Settings, History, BookMarked } from 'lucide-react';
 import { MessageList } from './MessageList';
-import { ChatInput } from './ChatInput';
+import { ChatInput, type AdditionMode } from './ChatInput';
 import { LearningCardsPanel } from '@/components/learning/LearningCardsPanel';
+import { PrinciplesLogicsPanel } from '@/components/global/PrinciplesLogicsPanel';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { SessionHistoryPanel } from '@/components/history/SessionHistoryPanel';
 import { AIAvatar } from '@/components/ai/AIAvatar';
@@ -27,6 +28,8 @@ interface ChatContainerProps {
   logics: Learning[];
   badgeFlash: boolean;
   sessions: SessionSummary[];
+  additionMode: AdditionMode;
+  onModeChange: (mode: AdditionMode) => void;
   onSend: (content: string) => void;
   onReset: () => void;
   onRemoveLearning: (id: string) => void;
@@ -54,6 +57,8 @@ export function ChatContainer({
   logics,
   badgeFlash,
   sessions,
+  additionMode,
+  onModeChange,
   onSend,
   onReset,
   onRemoveLearning,
@@ -69,10 +74,9 @@ export function ChatContainer({
   onRemoveSession,
 }: ChatContainerProps) {
   const [panelOpen, setPanelOpen] = useState(false);
+  const [principlesOpen, setPrinciplesOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const totalCards = learnings.length + principles.length + logics.length;
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -86,13 +90,14 @@ export function ChatContainer({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* テクニック */}
           <button
             onClick={() => setPanelOpen((v) => !v)}
             className="relative flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-indigo-50"
-            title="学習カードを見る"
+            title="学習カード（テクニック）"
           >
             <BookOpen className="w-3.5 h-3.5" />
-            学習カード
+            テクニック
             <span
               className={cn(
                 'text-[11px] font-bold px-1.5 py-0.5 rounded-full',
@@ -100,9 +105,24 @@ export function ChatContainer({
                 badgeFlash && 'animate-bounce',
               )}
             >
-              {totalCards}
+              {learnings.length}
             </span>
           </button>
+
+          {/* 原則/ロジック */}
+          <button
+            onClick={() => setPrinciplesOpen((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-emerald-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-emerald-50"
+            title="原則 / 変換ロジック"
+          >
+            <BookMarked className="w-3.5 h-3.5" />
+            原則/ロジック
+            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-500">
+              {principles.length + logics.length}
+            </span>
+          </button>
+
+          {/* 履歴 */}
           <button
             onClick={() => setHistoryOpen((v) => !v)}
             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-indigo-50"
@@ -111,6 +131,8 @@ export function ChatContainer({
             <History className="w-3.5 h-3.5" />
             履歴
           </button>
+
+          {/* 設定 */}
           <button
             onClick={() => setSettingsOpen((v) => !v)}
             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-indigo-50"
@@ -119,6 +141,8 @@ export function ChatContainer({
             <Settings className="w-3.5 h-3.5" />
             設定
           </button>
+
+          {/* リセット */}
           <button
             onClick={onReset}
             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-100"
@@ -142,27 +166,34 @@ export function ChatContainer({
       )}
 
       {/* Input */}
-      <ChatInput onSend={onSend} disabled={isLoading} />
+      <ChatInput
+        onSend={onSend}
+        disabled={isLoading}
+        additionMode={additionMode}
+        onModeChange={onModeChange}
+      />
 
-      {/* Learning Cards Panel */}
+      {/* Panels */}
       <LearningCardsPanel
         learnings={learnings}
-        principles={principles}
-        logics={logics}
         onRemove={onRemoveLearning}
         onUpdate={onUpdateLearning}
         onClear={onClearLearnings}
+        isOpen={panelOpen}
+        onClose={() => setPanelOpen(false)}
+      />
+      <PrinciplesLogicsPanel
+        principles={principles}
+        logics={logics}
         onAddPrinciple={onAddPrinciple}
         onRemovePrinciple={onRemovePrinciple}
         onUpdatePrinciple={onUpdatePrinciple}
         onAddLogic={onAddLogic}
         onRemoveLogic={onRemoveLogic}
         onUpdateLogic={onUpdateLogic}
-        isOpen={panelOpen}
-        onClose={() => setPanelOpen(false)}
+        isOpen={principlesOpen}
+        onClose={() => setPrinciplesOpen(false)}
       />
-
-      {/* Session History Panel */}
       <SessionHistoryPanel
         sessions={sessions}
         isOpen={historyOpen}
@@ -170,8 +201,6 @@ export function ChatContainer({
         onResume={onResumeSession}
         onRemove={onRemoveSession}
       />
-
-      {/* Settings Panel */}
       <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
