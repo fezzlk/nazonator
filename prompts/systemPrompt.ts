@@ -8,15 +8,36 @@ function buildSection(title: string, items: Learning[]): string {
   return `\n\n## ${title}\n${lines}`;
 }
 
-const ADDITION_MODE_INSTRUCTION: Record<NonNullable<AdditionMode>, string> = {
-  principles:
-    '\n\n## 特別指示（このターンのみ）\n' +
-    'ユーザーの入力内容を謎解きの**原則**として簡潔に一文にまとめてください。\n' +
-    'まとめた原則の文章のみを返答してください（前置き・説明は不要）。',
-  logics:
-    '\n\n## 特別指示（このターンのみ）\n' +
-    'ユーザーの入力内容を謎解きの**変換操作ロジック**として簡潔に一文にまとめてください。\n' +
-    'まとめたロジックの文章のみを返答してください（前置き・説明は不要）。',
+const ADDITION_MODE_PROMPT: Record<NonNullable<AdditionMode>, string> = {
+  principles: `ユーザーの入力から「謎解きの原則カード」を作成し、以下のJSON形式のみで返答してください。
+
+## cardの記述ルール
+- 60文字以内の日本語一文
+- 会話口調・挨拶・引用符を含めない
+- この謎だけでなく他の謎でも使える汎用的な表現（固有名詞・具体的な文字列は使わない）
+- 「〜である」「〜に注意」「〜とは限らない」などの形式
+
+## messageの記述ルール
+- カードを追加した旨を伝える自然な一文（例:「〜という原則を追加しました」）
+- cardの内容を短く引用してもよい
+
+## 出力形式（必ずこのJSONのみ、前後に余分なテキスト不要）
+{"card": "カードの内容", "message": "追加確認メッセージ"}`,
+
+  logics: `ユーザーの入力から「変換操作ロジックカード」を作成し、以下のJSON形式のみで返答してください。
+
+## cardの記述ルール
+- 80文字以内の日本語一文
+- 会話口調・挨拶・引用符を含めない
+- この謎だけでなく他の謎でも使える汎用的な表現（固有名詞・具体的な文字列は使わない）
+- 操作の条件・対象・結果を含む形式（例:「〜から〜を除くと〜になる場合がある」）
+
+## messageの記述ルール
+- カードを追加した旨を伝える自然な一文（例:「〜というロジックを追加しました」）
+- cardの内容を短く引用してもよい
+
+## 出力形式（必ずこのJSONのみ、前後に余分なテキスト不要）
+{"card": "カードの内容", "message": "追加確認メッセージ"}`,
 };
 
 export function buildSystemPrompt(
@@ -26,6 +47,11 @@ export function buildSystemPrompt(
   logics?: Learning[],
   additionMode?: AdditionMode,
 ): string {
+  // 追加モードは専用プロンプトのみ返す（ゲームキャラ設定は含めない）
+  if (additionMode && ADDITION_MODE_PROMPT[additionMode]) {
+    return ADDITION_MODE_PROMPT[additionMode];
+  }
+
   const level = GROWTH_LEVELS.find((l) => l.level === growthLevel) ?? GROWTH_LEVELS[0];
 
   const principlesSection = principles?.length
@@ -37,8 +63,6 @@ export function buildSystemPrompt(
   const learningsSection = learnings?.length
     ? buildSection('ユーザーからのアドバイス（テクニック）', learnings)
     : '';
-
-  const additionInstruction = additionMode ? (ADDITION_MODE_INSTRUCTION[additionMode] ?? '') : '';
 
   return `あなたは謎解きに挑戦するAIです。ユーザーが謎を出題し、あなたが解こうとします。現在のあなたの状態：「${level.name}（レベル${level.level}）」
 
@@ -65,5 +89,5 @@ ${level.description}
 - 「また一つ成長できた！」という言葉でAIとしての成長を表現してください
 - 次の謎への意欲を示してください
 
-現在のトーン：${level.tone}${principlesSection}${logicsSection}${learningsSection}${additionInstruction}`;
+現在のトーン：${level.tone}${principlesSection}${logicsSection}${learningsSection}`;
 }

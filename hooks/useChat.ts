@@ -116,6 +116,17 @@ export function useChat() {
     [state.messages, state.isLoading],
   );
 
+  const patchLastMessage = useCallback((content: string) => {
+    setState((prev) => {
+      const msgs = [...prev.messages];
+      const last = msgs.length - 1;
+      if (last >= 0 && msgs[last].role === 'assistant') {
+        msgs[last] = { ...msgs[last], content };
+      }
+      return { ...prev, messages: msgs };
+    });
+  }, []);
+
   const clearMessages = useCallback(() => {
     setState({
       messages: [],
@@ -140,6 +151,7 @@ export function useChat() {
     streamingContent: state.streamingContent,
     error: state.error,
     sendMessage,
+    patchLastMessage,
     clearMessages,
     loadSession,
   };

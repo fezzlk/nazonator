@@ -32,7 +32,7 @@ function ChatPageInner() {
   const searchParams = useSearchParams();
   const sessionIdParam = searchParams.get('id');
 
-  const { messages, isLoading, streamingContent, error, sendMessage, loadSession } = useChat();
+  const { messages, isLoading, streamingContent, error, sendMessage, patchLastMessage, loadSession } = useChat();
   const {
     solvedCount,
     learnings,
@@ -125,11 +125,24 @@ function ChatPageInner() {
       }
 
       sendMessage(content, currentLevel.level, learnings, principles, logics, currentMode, (fullText) => {
-        // 追加モード時: AI応答をカードに追加
-        if (currentMode === 'principles') {
-          addPrinciple(fullText.trim());
-        } else if (currentMode === 'logics') {
-          addLogic(fullText.trim());
+        // 追加モード時: JSONをパースしてカード登録 + 確認メッセージに差し替え
+        if (currentMode === 'principles' || currentMode === 'logics') {
+          try {
+            const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+            const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+            const cardContent = parsed?.card?.trim();
+            const displayMessage = parsed?.message?.trim();
+            if (cardContent) {
+              if (currentMode === 'principles') addPrinciple(cardContent);
+              else addLogic(cardContent);
+            }
+            if (displayMessage) patchLastMessage(displayMessage);
+          } catch {
+            // パース失敗時はそのままカード登録
+            if (currentMode === 'principles') addPrinciple(fullText.trim());
+            else addLogic(fullText.trim());
+          }
+          return;
         } else {
           // 通常モード: 謎解き完了チェック + テクニック抽出
           if (checkIfSolved(fullText)) {
@@ -153,6 +166,7 @@ function ChatPageInner() {
     },
     [
       sendMessage,
+      patchLastMessage,
       currentLevel.level,
       learnings,
       principles,
@@ -176,7 +190,7 @@ function ChatPageInner() {
       <ChatContainer
         messages={messages}
         isLoading={isLoading}
-        streamingContent={streamingContent}
+        streamingContent={additionMode ? '' : streamingContent}
         error={error}
         currentLevel={currentLevel}
         solvedCount={solvedCount}

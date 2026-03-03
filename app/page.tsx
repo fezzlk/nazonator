@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { Brain, Trash2, MessageSquare, Plus, Settings, LogOut } from 'lucide-react';
 import type { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
-import { useUserData } from '@/hooks/useUserData';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
+import { getUserData } from '@/lib/userDoc';
 import { getLevelByCount } from '@/prompts/constants';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { cn } from '@/lib/utils';
@@ -31,8 +31,17 @@ export default function HomePage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
 
-  const { solvedCount, dataLoading } = useUserData(user?.uid ?? null);
+  const [solvedCount, setSolvedCount] = useState(0);
+  const [solvedLoading, setSolvedLoading] = useState(true);
   const { sessions, sessionsLoading, removeSession } = useSessionHistory(user?.uid ?? null);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    getUserData(user.uid).then((data) => {
+      setSolvedCount(data?.solvedCount ?? 0);
+      setSolvedLoading(false);
+    });
+  }, [user?.uid]);
 
   const currentLevel = getLevelByCount(solvedCount);
 
@@ -57,7 +66,7 @@ export default function HomePage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [userMenuOpen]);
 
-  if (authLoading || dataLoading || sessionsLoading) {
+  if (authLoading || solvedLoading || sessionsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin" />
