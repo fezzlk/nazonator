@@ -32,7 +32,7 @@ function ChatPageInner() {
   const searchParams = useSearchParams();
   const sessionIdParam = searchParams.get('id');
 
-  const { messages, isLoading, streamingContent, error, sendMessage, clearMessages, loadSession } = useChat();
+  const { messages, isLoading, streamingContent, error, sendMessage, loadSession } = useChat();
   const {
     solvedCount,
     learnings,
@@ -53,7 +53,7 @@ function ChatPageInner() {
   } = useUserData(user?.uid ?? null);
 
   const { triggerExtraction } = useExtraction({ learnings, addLearning });
-  const { saveCurrentSession, startResumingSession, resetSession, loadSessionMessages } =
+  const { saveCurrentSession, startResumingSession, loadSessionMessages } =
     useSessionHistory(user?.uid ?? null);
 
   const [additionMode, setAdditionMode] = useState<AdditionMode>(null);
@@ -102,6 +102,7 @@ function ChatPageInner() {
     },
     [loadSessionMessages, loadSession, startResumingSession],
   );
+
 
   // URL パラメータ ?id= からセッションを読み込む
   useEffect(() => {
@@ -158,11 +159,6 @@ function ChatPageInner() {
     ],
   );
 
-  const handleReset = useCallback(() => {
-    clearMessages();
-    resetSession();
-  }, [clearMessages, resetSession]);
-
   if (authLoading || dataLoading) return <LoadingScreen />;
   if (!user) return null;
 
@@ -183,7 +179,6 @@ function ChatPageInner() {
         additionMode={additionMode}
         onModeChange={setAdditionMode}
         onSend={handleSend}
-        onReset={handleReset}
         onRemoveLearning={removeLearning}
         onUpdateLearning={updateLearning}
         onClearLearnings={clearLearnings}

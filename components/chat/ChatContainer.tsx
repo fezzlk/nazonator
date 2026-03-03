@@ -1,18 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { RotateCcw, BookOpen, Settings, BookMarked, Home } from 'lucide-react';
+import { BookOpen, BookMarked, Home, Settings, LogOut } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { ChatInput, type AdditionMode } from './ChatInput';
 import { LearningCardsPanel } from '@/components/learning/LearningCardsPanel';
 import { PrinciplesLogicsPanel } from '@/components/global/PrinciplesLogicsPanel';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { AIAvatar } from '@/components/ai/AIAvatar';
+import { useAuth } from '@/context/AuthContext';
 import type { Message } from '@/types/chat';
 import type { GrowthLevel } from '@/types/ai';
 import type { Learning } from '@/types/learning';
-import { LogoutButton } from '@/components/auth/LogoutButton';
 import { cn } from '@/lib/utils';
 
 interface ChatContainerProps {
@@ -29,7 +29,6 @@ interface ChatContainerProps {
   additionMode: AdditionMode;
   onModeChange: (mode: AdditionMode) => void;
   onSend: (content: string) => void;
-  onReset: () => void;
   onRemoveLearning: (id: string) => void;
   onUpdateLearning: (id: string, content: string) => void;
   onClearLearnings: () => void;
@@ -55,7 +54,6 @@ export function ChatContainer({
   additionMode,
   onModeChange,
   onSend,
-  onReset,
   onRemoveLearning,
   onUpdateLearning,
   onClearLearnings,
@@ -66,30 +64,38 @@ export function ChatContainer({
   onRemoveLogic,
   onUpdateLogic,
 }: ChatContainerProps) {
+  const { user, signOut } = useAuth();
   const [panelOpen, setPanelOpen] = useState(false);
   const [principlesOpen, setPrinciplesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [userMenuOpen]);
+
+  const avatarLetter = user?.displayName?.[0] ?? user?.email?.[0]?.toUpperCase() ?? '?';
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          {/* Home button */}
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors px-2 py-1.5 rounded-lg hover:bg-indigo-50"
-            title="ホームへ戻る"
-          >
-            <Home className="w-3.5 h-3.5" />
-            ホーム
-          </Link>
           <AIAvatar level={currentLevel} isThinking={isLoading} />
           <div>
             <h1 className="text-base font-bold text-gray-900">なぞなぞAI</h1>
             <p className="text-xs text-gray-500">解決数: {solvedCount}問</p>
           </div>
         </div>
+
         <div className="flex items-center gap-2">
           {/* テクニック */}
           <button
@@ -123,26 +129,49 @@ export function ChatContainer({
             </span>
           </button>
 
-          {/* 設定 */}
-          <button
-            onClick={() => setSettingsOpen((v) => !v)}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-lg hover:bg-indigo-50"
-            title="設定"
-          >
-            <Settings className="w-3.5 h-3.5" />
-            設定
-          </button>
+          {/* ユーザーメニュー */}
+          <div ref={menuRef} className="relative">
+            <button
+              onClick={() => setUserMenuOpen((v) => !v)}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 text-white text-xs font-bold hover:shadow-md transition-shadow overflow-hidden"
+              title="メニュー"
+            >
+              {user?.photoURL ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.photoURL} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                avatarLetter
+              )}
+            </button>
 
-          {/* リセット */}
-          <button
-            onClick={onReset}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-100"
-            title="会話をリセット"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            リセット
-          </button>
-          <LogoutButton />
+            {userMenuOpen && (
+              <div className="absolute right-0 top-10 w-40 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                <Link
+                  href="/"
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                  onClick={() => setUserMenuOpen(false)}
+                >
+                  <Home className="w-4 h-4" />
+                  ホーム
+                </Link>
+                <button
+                  onClick={() => { setSettingsOpen(true); setUserMenuOpen(false); }}
+                  className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  設定
+                </button>
+                <div className="my-1 border-t border-gray-100" />
+                <button
+                  onClick={() => signOut()}
+                  className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-red-50 hover:text-red-500 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  ログアウト
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

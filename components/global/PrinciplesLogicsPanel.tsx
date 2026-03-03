@@ -21,6 +21,7 @@ interface PrinciplesLogicsPanelProps {
 
 interface SectionProps {
   title: string;
+  description: string;
   accent: string;
   items: Learning[];
   editingId: string | null;
@@ -35,6 +36,7 @@ interface SectionProps {
 
 function Section({
   title,
+  description,
   accent,
   items,
   editingId,
@@ -66,12 +68,17 @@ function Section({
           'bg-white border-b border-gray-100',
         )}
       >
-        <div className="flex items-center gap-2">
-          <span className={cn('w-1.5 h-4 rounded-full', accent)} />
-          <span className="text-xs font-semibold text-gray-700">{title}</span>
-          <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
-            {items.length}件
-          </span>
+        <div className="flex items-start gap-2">
+          <span className={cn('w-1.5 h-4 rounded-full mt-0.5 shrink-0', accent)} />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-700">{title}</span>
+              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                {items.length}件
+              </span>
+            </div>
+            <p className="text-[11px] text-gray-400 mt-0.5">{description}</p>
+          </div>
         </div>
         {collapsed ? (
           <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
@@ -236,6 +243,7 @@ export function PrinciplesLogicsPanel({
         <div className="flex-1 overflow-y-auto">
           <Section
             title="謎解きの原則"
+            description="一般的な謎解きの前提とされるルール"
             accent="bg-emerald-400"
             items={principles}
             editingId={editingSection === 'principles' ? editingId : null}
@@ -249,6 +257,7 @@ export function PrinciplesLogicsPanel({
           />
           <Section
             title="変換操作ロジック"
+            description="AIが苦手とする変換処理のアシスト"
             accent="bg-violet-400"
             items={logics}
             editingId={editingSection === 'logics' ? editingId : null}
