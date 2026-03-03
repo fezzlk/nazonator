@@ -19,7 +19,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace('/chat');
+      router.replace('/');
     }
   }, [loading, user, router]);
 
@@ -33,7 +33,7 @@ export default function LoginPage() {
       } else {
         await signUpWithEmail(email, password);
       }
-      router.replace('/chat');
+      router.replace('/');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'エラーが発生しました';
       setError(message);
@@ -47,7 +47,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await signInWithGoogle();
-      router.replace('/chat');
+      router.replace('/');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'エラーが発生しました';
       setError(message);

@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { ChatContainer } from '@/components/chat/ChatContainer';
 import { LevelUpNotice } from '@/components/ai/LevelUpNotice';
 import { useChat } from '@/hooks/useChat';
@@ -25,9 +26,11 @@ function LoadingScreen() {
   );
 }
 
-export default function ChatPage() {
+function ChatPageInner() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionIdParam = searchParams.get('id');
 
   const { messages, isLoading, streamingContent, error, sendMessage, clearMessages, loadSession } = useChat();
   const {
@@ -50,7 +53,7 @@ export default function ChatPage() {
   } = useUserData(user?.uid ?? null);
 
   const { triggerExtraction } = useExtraction({ learnings, addLearning });
-  const { sessions, saveCurrentSession, startResumingSession, resetSession, loadSessionMessages, removeSession } =
+  const { saveCurrentSession, startResumingSession, resetSession, loadSessionMessages } =
     useSessionHistory(user?.uid ?? null);
 
   const [additionMode, setAdditionMode] = useState<AdditionMode>(null);
@@ -58,6 +61,7 @@ export default function ChatPage() {
   const [prevSolvedCount, setPrevSolvedCount] = useState(solvedCount);
   const [badgeFlash, setBadgeFlash] = useState(false);
   const prevLearningsLen = useRef(learnings.length);
+  const hasLoadedFromUrl = useRef(false);
 
   // auth guard
   useEffect(() => {
@@ -89,6 +93,22 @@ export default function ChatPage() {
   }, [learnings.length]);
 
   const currentLevel = getLevelByCount(solvedCount);
+
+  const handleResumeSession = useCallback(
+    async (sessionId: string) => {
+      const sessionMessages = await loadSessionMessages(sessionId);
+      loadSession(sessionMessages);
+      startResumingSession(sessionId);
+    },
+    [loadSessionMessages, loadSession, startResumingSession],
+  );
+
+  // URL パラメータ ?id= からセッションを読み込む
+  useEffect(() => {
+    if (hasLoadedFromUrl.current || !sessionIdParam || !user || authLoading || dataLoading) return;
+    hasLoadedFromUrl.current = true;
+    handleResumeSession(sessionIdParam);
+  }, [sessionIdParam, user, authLoading, dataLoading, handleResumeSession]);
 
   const handleSend = useCallback(
     (content: string) => {
@@ -143,15 +163,6 @@ export default function ChatPage() {
     resetSession();
   }, [clearMessages, resetSession]);
 
-  const handleResumeSession = useCallback(
-    async (sessionId: string) => {
-      const sessionMessages = await loadSessionMessages(sessionId);
-      loadSession(sessionMessages);
-      startResumingSession(sessionId);
-    },
-    [loadSessionMessages, loadSession, startResumingSession],
-  );
-
   if (authLoading || dataLoading) return <LoadingScreen />;
   if (!user) return null;
 
@@ -169,7 +180,6 @@ export default function ChatPage() {
         principles={principles}
         logics={logics}
         badgeFlash={badgeFlash}
-        sessions={sessions}
         additionMode={additionMode}
         onModeChange={setAdditionMode}
         onSend={handleSend}
@@ -183,9 +193,15 @@ export default function ChatPage() {
         onAddLogic={addLogic}
         onRemoveLogic={removeLogic}
         onUpdateLogic={updateLogic}
-        onResumeSession={handleResumeSession}
-        onRemoveSession={removeSession}
       />
     </>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin" /></div>}>
+      <ChatPageInner />
+    </Suspense>
   );
 }
