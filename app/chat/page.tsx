@@ -116,6 +116,14 @@ function ChatPageInner() {
       const preMessages = messages;
       const currentMode = additionMode;
 
+      // 通常モード: ユーザーメッセージ送信時点で即時保存（AI応答を待たない）
+      if (currentMode === null) {
+        saveCurrentSession([
+          ...preMessages,
+          { id: `${Date.now()}-u`, role: 'user' as const, content, timestamp: new Date() },
+        ]);
+      }
+
       sendMessage(content, currentLevel.level, learnings, principles, logics, currentMode, (fullText) => {
         // 追加モード時: AI応答をカードに追加
         if (currentMode === 'principles') {

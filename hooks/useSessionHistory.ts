@@ -11,13 +11,19 @@ function generateId(): string {
 export function useSessionHistory(uid: string | null) {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
 
   useEffect(() => {
     if (!uid) {
       setSessions([]);
+      setSessionsLoading(false);
       return;
     }
-    listSessions(uid).then(setSessions).catch(console.error);
+    setSessionsLoading(true);
+    listSessions(uid)
+      .then(setSessions)
+      .catch(console.error)
+      .finally(() => setSessionsLoading(false));
   }, [uid]);
 
   const saveCurrentSession = useCallback(
@@ -77,6 +83,7 @@ export function useSessionHistory(uid: string | null) {
 
   return {
     sessions,
+    sessionsLoading,
     currentSessionId,
     saveCurrentSession,
     startResumingSession,

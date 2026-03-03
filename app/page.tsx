@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Brain, Trash2, MessageSquare, Plus } from 'lucide-react';
+import { Brain, Trash2, MessageSquare, Plus, Settings, LogOut } from 'lucide-react';
 import type { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
 import { useUserData } from '@/hooks/useUserData';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
 import { getLevelByCount } from '@/prompts/constants';
-import { LogoutButton } from '@/components/auth/LogoutButton';
+import { SettingsPanel } from '@/components/settings/SettingsPanel';
+import { cn } from '@/lib/utils';
 
 function formatDate(ts: Timestamp | null | undefined): string {
   if (!ts) return '';
@@ -27,13 +28,17 @@ function formatDate(ts: Timestamp | null | undefined): string {
 }
 
 export default function HomePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
 
   const { solvedCount, dataLoading } = useUserData(user?.uid ?? null);
-  const { sessions, removeSession } = useSessionHistory(user?.uid ?? null);
+  const { sessions, sessionsLoading, removeSession } = useSessionHistory(user?.uid ?? null);
 
   const currentLevel = getLevelByCount(solvedCount);
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -41,7 +46,18 @@ export default function HomePage() {
     }
   }, [authLoading, user, router]);
 
-  if (authLoading || dataLoading) {
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [userMenuOpen]);
+
+  if (authLoading || dataLoading || sessionsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         <div className="w-8 h-8 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin" />
@@ -50,6 +66,8 @@ export default function HomePage() {
   }
 
   if (!user) return null;
+
+  const avatarLetter = user.displayName?.[0] ?? user.email?.[0]?.toUpperCase() ?? '?';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
@@ -61,7 +79,42 @@ export default function HomePage() {
           </div>
           <h1 className="text-base font-bold text-gray-900">なぞなぞAI</h1>
         </div>
-        <LogoutButton />
+
+        {/* ユーザーメニュー */}
+        <div ref={menuRef} className="relative">
+          <button
+            onClick={() => setUserMenuOpen((v) => !v)}
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 text-white text-xs font-bold hover:shadow-md transition-shadow overflow-hidden"
+            title="メニュー"
+          >
+            {user.photoURL ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.photoURL} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              avatarLetter
+            )}
+          </button>
+
+          {userMenuOpen && (
+            <div className="absolute right-0 top-10 w-40 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+              <button
+                onClick={() => { setSettingsOpen(true); setUserMenuOpen(false); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                設定
+              </button>
+              <div className="my-1 border-t border-gray-100" />
+              <button
+                onClick={() => signOut()}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-600 hover:bg-red-50 hover:text-red-500 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                ログアウト
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
@@ -98,7 +151,7 @@ export default function HomePage() {
           ) : (
             <div className="space-y-3">
               {sessions.map((session) => (
-                <div key={session.id} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+                <div key={session.id} className={cn('bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3')}>
                   <p className="text-sm font-semibold text-gray-800 truncate">{session.title}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {formatDate(session.updatedAt)} · {session.messageCount}件のメッセージ
@@ -124,6 +177,8 @@ export default function HomePage() {
           )}
         </div>
       </main>
+
+      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
