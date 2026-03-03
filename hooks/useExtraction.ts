@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import type { Message } from '@/types/chat';
 import type { Learning } from '@/types/learning';
 import { MAX_LEARNINGS } from './useLearnings';
+import { getStoredApiKey } from '@/lib/apiKey';
 
 export function useExtraction({
   learnings,
@@ -21,12 +22,14 @@ export function useExtraction({
       isExtracting.current = true;
       try {
         const existingCardContents = learnings.map((l) => l.content);
+        const apiKey = getStoredApiKey();
         const res = await fetch('/api/extract', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
             existingCardContents,
+            apiKey,
           }),
         });
         if (!res.ok) return;

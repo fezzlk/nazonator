@@ -11,6 +11,7 @@ import { useExtraction } from '@/hooks/useExtraction';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
 import { useAuth } from '@/context/AuthContext';
 import { getLevelByCount, SOLVED_TRIGGER_PHRASES } from '@/prompts/constants';
+import { getStoredApiKey } from '@/lib/apiKey';
 import type { AdditionMode } from '@/types/chat';
 
 function checkIfSolved(text: string): boolean {
@@ -57,6 +58,7 @@ function ChatPageInner() {
     useSessionHistory(user?.uid ?? null);
 
   const [additionMode, setAdditionMode] = useState<AdditionMode>(null);
+  const [hasApiKey, setHasApiKey] = useState(() => !!getStoredApiKey());
   const [isLevelingUp, setIsLevelingUp] = useState(false);
   const [prevSolvedCount, setPrevSolvedCount] = useState(solvedCount);
   const [badgeFlash, setBadgeFlash] = useState(false);
@@ -210,6 +212,8 @@ function ChatPageInner() {
         onAddLogic={addLogic}
         onRemoveLogic={removeLogic}
         onUpdateLogic={updateLogic}
+        hasApiKey={hasApiKey}
+        onSettingsClose={() => setHasApiKey(!!getStoredApiKey())}
       />
     </>
   );

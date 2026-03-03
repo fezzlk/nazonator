@@ -66,7 +66,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-              OpenAI APIキー（任意）
+              OpenAI APIキー（必須）
             </label>
             <div className="relative">
               <input
@@ -127,9 +127,6 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             </p>
           </div>
 
-          <p className="text-xs text-gray-400 leading-relaxed">
-            設定しない場合は、サービス共有のAPIキーが使用されます。
-          </p>
         </div>
       </div>
     </>

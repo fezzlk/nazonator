@@ -26,9 +26,13 @@ const EXTRACT_PROMPT = `あなたは会話から「AIが今後の謎解きに活
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, existingCardContents } = await req.json();
+    const { messages, existingCardContents, apiKey } = await req.json();
 
     if (!Array.isArray(messages) || messages.length < 2) {
+      return NextResponse.json({ newCards: [] });
+    }
+
+    if (!apiKey) {
       return NextResponse.json({ newCards: [] });
     }
 
@@ -44,7 +48,7 @@ export async function POST(req: NextRequest) {
         ? `\n\n## 既存の学習カード（重複除外対象）\n${existingCardContents.map((c: string) => `- ${c}`).join('\n')}`
         : '';
 
-    const client = getOpenAIClient();
+    const client = getOpenAIClient(apiKey);
     const completion = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       temperature: 0.2,

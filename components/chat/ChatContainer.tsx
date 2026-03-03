@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, BookMarked, Home, Settings, LogOut } from 'lucide-react';
+import { BookOpen, BookMarked, Home, Settings, LogOut, AlertTriangle } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { ChatInput, type AdditionMode } from './ChatInput';
 import { LearningCardsPanel } from '@/components/learning/LearningCardsPanel';
@@ -38,6 +38,8 @@ interface ChatContainerProps {
   onAddLogic: (content: string) => void;
   onRemoveLogic: (id: string) => void;
   onUpdateLogic: (id: string, content: string) => void;
+  hasApiKey: boolean;
+  onSettingsClose?: () => void;
 }
 
 export function ChatContainer({
@@ -63,6 +65,8 @@ export function ChatContainer({
   onAddLogic,
   onRemoveLogic,
   onUpdateLogic,
+  hasApiKey,
+  onSettingsClose,
 }: ChatContainerProps) {
   const { user, signOut } = useAuth();
   const [panelOpen, setPanelOpen] = useState(false);
@@ -160,6 +164,7 @@ export function ChatContainer({
                 >
                   <Settings className="w-4 h-4" />
                   設定
+                  {!hasApiKey && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 ml-0.5" />}
                 </button>
                 <div className="my-1 border-t border-gray-100" />
                 <button
@@ -174,6 +179,22 @@ export function ChatContainer({
           </div>
         </div>
       </header>
+
+      {/* API key notice */}
+      {!hasApiKey && (
+        <div className="mx-4 mt-3 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5">
+          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+          <p className="text-xs text-amber-800 flex-1">
+            OpenAI APIキーが設定されていません。メッセージを送るには設定が必要です。
+          </p>
+          <button
+            onClick={() => { setSettingsOpen(true); }}
+            className="text-xs font-semibold text-amber-700 hover:text-amber-900 underline shrink-0"
+          >
+            設定を開く
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <MessageList messages={messages} isLoading={isLoading} streamingContent={streamingContent} />
@@ -214,7 +235,7 @@ export function ChatContainer({
         isOpen={principlesOpen}
         onClose={() => setPrinciplesOpen(false)}
       />
-      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsPanel isOpen={settingsOpen} onClose={() => { setSettingsOpen(false); onSettingsClose?.(); }} />
     </div>
   );
 }
