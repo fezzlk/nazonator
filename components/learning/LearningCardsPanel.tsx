@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BookOpen, Pencil, Trash2, X, Check } from 'lucide-react';
+import { BookOpen, Pencil, Trash2, X, Check, ArrowRightLeft } from 'lucide-react';
 import type { Learning } from '@/types/learning';
 import { MAX_LEARNINGS, MAX_CONTENT_LENGTH } from '@/hooks/useLearnings';
 import { cn } from '@/lib/utils';
@@ -11,18 +11,21 @@ interface LearningCardsPanelProps {
   onRemove: (id: string) => void;
   onUpdate: (id: string, content: string) => void;
   onClear: () => void;
+  onMoveItem: (id: string, content: string, to: 'principles' | 'logics') => void;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function LearningCardsPanel({ learnings, onRemove, onUpdate, onClear, isOpen, onClose }: LearningCardsPanelProps) {
+export function LearningCardsPanel({ learnings, onRemove, onUpdate, onClear, onMoveItem, isOpen, onClose }: LearningCardsPanelProps) {
   const isAtLimit = learnings.length >= MAX_LEARNINGS;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
+  const [movingId, setMovingId] = useState<string | null>(null);
 
   function startEdit(learning: Learning) {
     setEditingId(learning.id);
     setEditingContent(learning.content);
+    setMovingId(null);
   }
 
   function cancelEdit() {
@@ -40,6 +43,7 @@ export function LearningCardsPanel({ learnings, onRemove, onUpdate, onClear, isO
   return (
     <>
       {isOpen && <div className="fixed inset-0 z-30 bg-black/20" onClick={onClose} />}
+      {movingId && <div className="fixed inset-0 z-40" onClick={() => setMovingId(null)} />}
 
       <div
         className={cn(
@@ -113,7 +117,7 @@ export function LearningCardsPanel({ learnings, onRemove, onUpdate, onClear, isO
                 ) : (
                   <div className="flex items-start gap-2">
                     <p className="flex-1 text-sm text-gray-800 leading-relaxed">{learning.content}</p>
-                    <div className="flex shrink-0 gap-1 mt-0.5">
+                    <div className="relative flex shrink-0 gap-1 mt-0.5">
                       <button
                         onClick={() => startEdit(learning)}
                         className="text-gray-400 hover:text-indigo-400 transition-colors"
@@ -122,12 +126,35 @@ export function LearningCardsPanel({ learnings, onRemove, onUpdate, onClear, isO
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        onClick={() => setMovingId(movingId === learning.id ? null : learning.id)}
+                        className="text-gray-400 hover:text-indigo-400 transition-colors"
+                        aria-label="移動"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <button
                         onClick={() => onRemove(learning.id)}
                         className="text-gray-400 hover:text-red-400 transition-colors"
                         aria-label="削除"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
+                      {movingId === learning.id && (
+                        <div className="absolute right-0 top-5 bg-white border border-gray-100 rounded-xl shadow-lg z-50 py-1 min-w-[7.5rem]">
+                          <button
+                            onClick={() => { onMoveItem(learning.id, learning.content, 'principles'); setMovingId(null); }}
+                            className="flex items-center w-full px-3 py-2 text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                          >
+                            → 原則へ
+                          </button>
+                          <button
+                            onClick={() => { onMoveItem(learning.id, learning.content, 'logics'); setMovingId(null); }}
+                            className="flex items-center w-full px-3 py-2 text-xs text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                          >
+                            → ロジックへ
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

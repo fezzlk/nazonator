@@ -32,6 +32,7 @@ interface ChatContainerProps {
   onRemoveLearning: (id: string) => void;
   onUpdateLearning: (id: string, content: string) => void;
   onClearLearnings: () => void;
+  onAddLearning: (content: string) => void;
   onAddPrinciple: (content: string) => void;
   onRemovePrinciple: (id: string) => void;
   onUpdatePrinciple: (id: string, content: string) => void;
@@ -59,6 +60,7 @@ export function ChatContainer({
   onRemoveLearning,
   onUpdateLearning,
   onClearLearnings,
+  onAddLearning,
   onAddPrinciple,
   onRemovePrinciple,
   onUpdatePrinciple,
@@ -69,6 +71,13 @@ export function ChatContainer({
   onSettingsClose,
 }: ChatContainerProps) {
   const { user, signOut } = useAuth();
+
+  function moveLearningToPrinciple(id: string, content: string) { onRemoveLearning(id); onAddPrinciple(content); }
+  function moveLearningToLogic(id: string, content: string) { onRemoveLearning(id); onAddLogic(content); }
+  function movePrincipleToLearning(id: string, content: string) { onRemovePrinciple(id); onAddLearning(content); }
+  function movePrincipleToLogic(id: string, content: string) { onRemovePrinciple(id); onAddLogic(content); }
+  function moveLogicToLearning(id: string, content: string) { onRemoveLogic(id); onAddLearning(content); }
+  function moveLogicToPrinciple(id: string, content: string) { onRemoveLogic(id); onAddPrinciple(content); }
   const [panelOpen, setPanelOpen] = useState(false);
   const [principlesOpen, setPrinciplesOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -220,6 +229,9 @@ export function ChatContainer({
         onRemove={onRemoveLearning}
         onUpdate={onUpdateLearning}
         onClear={onClearLearnings}
+        onMoveItem={(id, content, to) =>
+          to === 'principles' ? moveLearningToPrinciple(id, content) : moveLearningToLogic(id, content)
+        }
         isOpen={panelOpen}
         onClose={() => setPanelOpen(false)}
       />
@@ -232,6 +244,14 @@ export function ChatContainer({
         onAddLogic={onAddLogic}
         onRemoveLogic={onRemoveLogic}
         onUpdateLogic={onUpdateLogic}
+        principlesMoveTargets={[
+          { label: 'テクニックへ', colorClass: 'hover:bg-indigo-50 hover:text-indigo-700', onClick: movePrincipleToLearning },
+          { label: 'ロジックへ', colorClass: 'hover:bg-violet-50 hover:text-violet-700', onClick: movePrincipleToLogic },
+        ]}
+        logicsMoveTargets={[
+          { label: 'テクニックへ', colorClass: 'hover:bg-indigo-50 hover:text-indigo-700', onClick: moveLogicToLearning },
+          { label: '原則へ', colorClass: 'hover:bg-emerald-50 hover:text-emerald-700', onClick: moveLogicToPrinciple },
+        ]}
         isOpen={principlesOpen}
         onClose={() => setPrinciplesOpen(false)}
       />

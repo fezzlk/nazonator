@@ -209,6 +209,7 @@ function ChatPageInner() {
         onAddPrinciple={addPrinciple}
         onRemovePrinciple={removePrinciple}
         onUpdatePrinciple={updatePrinciple}
+        onAddLearning={addLearning}
         onAddLogic={addLogic}
         onRemoveLogic={removeLogic}
         onUpdateLogic={updateLogic}
