@@ -99,7 +99,7 @@ function Section({
                   <div className="flex flex-col gap-2">
                     <textarea
                       className="w-full text-sm text-gray-800 border border-indigo-300 rounded-lg px-2 py-1.5 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                      autoComplete="off"
+                      autoComplete="new-password"
                       rows={3}
                       maxLength={MAX_CONTENT_LENGTH}
                       value={editingContent}
@@ -157,7 +157,7 @@ function Section({
           <div className="flex gap-2 pt-1">
             <input
               type="text"
-              autoComplete="off"
+              autoComplete="new-password"
               className="flex-1 text-sm text-gray-900 border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
               placeholder="直接追加..."
               maxLength={MAX_CONTENT_LENGTH}

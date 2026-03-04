@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { upsertSession, listSessions, getSession, deleteSession, type SessionSummary } from '@/lib/sessions';
 import type { Message } from '@/types/chat';
 
@@ -11,6 +11,7 @@ function generateId(): string {
 export function useSessionHistory(uid: string | null) {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const currentSessionIdRef = useRef<string | null>(null);
   const [sessionsLoading, setSessionsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,9 +31,11 @@ export function useSessionHistory(uid: string | null) {
     async (messages: Message[]) => {
       if (!uid || messages.length === 0) return;
 
-      let sessionId = currentSessionId;
+      // refを使うことでstale closureを回避（コールバック内からでも最新のセッションIDを参照できる）
+      let sessionId = currentSessionIdRef.current;
       if (!sessionId) {
         sessionId = generateId();
+        currentSessionIdRef.current = sessionId;
         setCurrentSessionId(sessionId);
       }
 
@@ -43,14 +46,16 @@ export function useSessionHistory(uid: string | null) {
       await upsertSession(uid, sessionId, { title, messages: messagesToSave });
       listSessions(uid).then(setSessions).catch(console.error);
     },
-    [uid, currentSessionId],
+    [uid],
   );
 
   const startResumingSession = useCallback((sessionId: string) => {
+    currentSessionIdRef.current = sessionId;
     setCurrentSessionId(sessionId);
   }, []);
 
   const resetSession = useCallback(() => {
+    currentSessionIdRef.current = null;
     setCurrentSessionId(null);
   }, []);
 

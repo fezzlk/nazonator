@@ -71,7 +71,7 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
             <div className="relative">
               <input
                 type={showKey ? 'text' : 'password'}
-                autoComplete="off"
+                autoComplete="new-password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="sk-..."
