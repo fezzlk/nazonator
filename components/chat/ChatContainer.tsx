@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { BookOpen, BookMarked, Home, Settings, LogOut, AlertTriangle } from 'lucide-react';
+import { BookOpen, BookMarked, Home, Settings, LogOut, AlertTriangle, Plus, Sparkles } from 'lucide-react';
 import { MessageList } from './MessageList';
 import { ChatInput, type AdditionMode } from './ChatInput';
 import { LearningCardsPanel } from '@/components/learning/LearningCardsPanel';
@@ -31,6 +31,7 @@ interface ChatContainerProps {
   onSend: (content: string) => void;
   onRemoveLearning: (id: string) => void;
   onUpdateLearning: (id: string, content: string) => void;
+  onUpdateLearningTags: (id: string, tags: string[]) => void;
   onClearLearnings: () => void;
   onAddLearning: (content: string) => void;
   onAddPrinciple: (content: string) => void;
@@ -41,6 +42,9 @@ interface ChatContainerProps {
   onUpdateLogic: (id: string, content: string) => void;
   hasApiKey: boolean;
   onSettingsClose?: () => void;
+  isSolved?: boolean;
+  onNextPuzzle?: () => void;
+  onNewChat?: () => void;
 }
 
 export function ChatContainer({
@@ -59,6 +63,7 @@ export function ChatContainer({
   onSend,
   onRemoveLearning,
   onUpdateLearning,
+  onUpdateLearningTags,
   onClearLearnings,
   onAddLearning,
   onAddPrinciple,
@@ -69,6 +74,9 @@ export function ChatContainer({
   onUpdateLogic,
   hasApiKey,
   onSettingsClose,
+  isSolved,
+  onNextPuzzle,
+  onNewChat,
 }: ChatContainerProps) {
   const { user, signOut } = useAuth();
 
@@ -168,6 +176,13 @@ export function ChatContainer({
                   ホーム
                 </Link>
                 <button
+                  onClick={() => { onNewChat?.(); setUserMenuOpen(false); }}
+                  className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  新規会話
+                </button>
+                <button
                   onClick={() => { setSettingsOpen(true); setUserMenuOpen(false); }}
                   className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
                 >
@@ -215,6 +230,21 @@ export function ChatContainer({
         </div>
       )}
 
+      {/* 正解バナー */}
+      {isSolved && (
+        <div className="mx-4 mb-2 px-4 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-2xl flex items-center gap-3">
+          <Sparkles className="w-5 h-5 text-indigo-500 shrink-0" />
+          <p className="flex-1 text-sm font-semibold text-indigo-800">謎が解けました！</p>
+          <button
+            onClick={onNextPuzzle}
+            className="flex items-center gap-1.5 text-xs text-white bg-indigo-500 hover:bg-indigo-600 transition-colors px-3 py-1.5 rounded-xl font-semibold shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            次の会話を始める
+          </button>
+        </div>
+      )}
+
       {/* Input */}
       <ChatInput
         onSend={onSend}
@@ -228,6 +258,7 @@ export function ChatContainer({
         learnings={learnings}
         onRemove={onRemoveLearning}
         onUpdate={onUpdateLearning}
+        onUpdateTags={onUpdateLearningTags}
         onClear={onClearLearnings}
         onMoveItem={(id, content, to) =>
           to === 'principles' ? moveLearningToPrinciple(id, content) : moveLearningToLogic(id, content)

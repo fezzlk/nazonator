@@ -10,34 +10,45 @@ interface LearningCardsPanelProps {
   learnings: Learning[];
   onRemove: (id: string) => void;
   onUpdate: (id: string, content: string) => void;
+  onUpdateTags: (id: string, tags: string[]) => void;
   onClear: () => void;
   onMoveItem: (id: string, content: string, to: 'principles' | 'logics') => void;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function LearningCardsPanel({ learnings, onRemove, onUpdate, onClear, onMoveItem, isOpen, onClose }: LearningCardsPanelProps) {
+export function LearningCardsPanel({ learnings, onRemove, onUpdate, onUpdateTags, onClear, onMoveItem, isOpen, onClose }: LearningCardsPanelProps) {
   const isAtLimit = learnings.length >= MAX_LEARNINGS;
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
+  const [editingTags, setEditingTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [movingId, setMovingId] = useState<string | null>(null);
+
+  const allExistingTags = Array.from(new Set(learnings.flatMap((l) => l.tags ?? []))).sort();
 
   function startEdit(learning: Learning) {
     setEditingId(learning.id);
     setEditingContent(learning.content);
+    setEditingTags(learning.tags ?? []);
     setMovingId(null);
   }
 
   function cancelEdit() {
     setEditingId(null);
     setEditingContent('');
+    setEditingTags([]);
+    setTagInput('');
   }
 
   function saveEdit(id: string) {
     const trimmed = editingContent.trim();
     if (trimmed) onUpdate(id, trimmed);
+    onUpdateTags(id, editingTags);
     setEditingId(null);
     setEditingContent('');
+    setEditingTags([]);
+    setTagInput('');
   }
 
   return (
@@ -94,6 +105,48 @@ export function LearningCardsPanel({ learnings, onRemove, onUpdate, onClear, onM
                       onChange={(e) => setEditingContent(e.target.value)}
                       autoFocus
                     />
+                    {/* タグ編集 */}
+                    <div>
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {editingTags.map((tag) => (
+                          <span key={tag} className="flex items-center gap-1 text-[10px] bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5">
+                            {tag}
+                            <button onClick={() => setEditingTags(editingTags.filter((t) => t !== tag))}>
+                              <X className="w-2.5 h-2.5" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <input
+                        type="text"
+                        autoComplete="new-password"
+                        placeholder="タグを追加（Enterで確定）"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if ((e.key === 'Enter' || e.key === ' ') && tagInput.trim()) {
+                            const t = tagInput.trim();
+                            if (!editingTags.includes(t)) setEditingTags([...editingTags, t]);
+                            setTagInput('');
+                            e.preventDefault();
+                          }
+                        }}
+                        className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300 placeholder:text-gray-300"
+                      />
+                      {allExistingTags.filter((t) => !editingTags.includes(t)).length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {allExistingTags.filter((t) => !editingTags.includes(t)).map((t) => (
+                            <button
+                              key={t}
+                              onClick={() => setEditingTags([...editingTags, t])}
+                              className="text-[10px] text-indigo-500 border border-indigo-200 rounded-full px-2 py-0.5 hover:bg-indigo-50 transition-colors"
+                            >
+                              + {t}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] text-gray-400">{editingContent.length}/{MAX_CONTENT_LENGTH}</span>
                       <div className="flex gap-1.5">
@@ -116,7 +169,18 @@ export function LearningCardsPanel({ learnings, onRemove, onUpdate, onClear, onM
                   </div>
                 ) : (
                   <div className="flex items-start gap-2">
-                    <p className="flex-1 text-sm text-gray-800 leading-relaxed">{learning.content}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-800 leading-relaxed">{learning.content}</p>
+                      {learning.tags && learning.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {learning.tags.map((tag) => (
+                            <span key={tag} className="text-[10px] bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div className="relative flex shrink-0 gap-1 mt-0.5">
                       <button
                         onClick={() => startEdit(learning)}

@@ -33,7 +33,7 @@ function ChatPageInner() {
   const searchParams = useSearchParams();
   const sessionIdParam = searchParams.get('id');
 
-  const { messages, isLoading, streamingContent, error, sendMessage, patchLastMessage, loadSession } = useChat();
+  const { messages, isLoading, streamingContent, error, sendMessage, patchLastMessage, clearMessages, loadSession } = useChat();
   const {
     solvedCount,
     learnings,
@@ -44,6 +44,7 @@ function ChatPageInner() {
     addLearning,
     removeLearning,
     updateLearning,
+    updateLearningTags,
     clearLearnings,
     addPrinciple,
     removePrinciple,
@@ -59,6 +60,7 @@ function ChatPageInner() {
 
   const [additionMode, setAdditionMode] = useState<AdditionMode>(null);
   const [hasApiKey, setHasApiKey] = useState(() => !!getStoredApiKey());
+  const [isSolved, setIsSolved] = useState(false);
   const [isLevelingUp, setIsLevelingUp] = useState(false);
   const [prevSolvedCount, setPrevSolvedCount] = useState(solvedCount);
   const [badgeFlash, setBadgeFlash] = useState(false);
@@ -149,6 +151,7 @@ function ChatPageInner() {
           // 通常モード: 謎解き完了チェック + テクニック抽出
           if (checkIfSolved(fullText)) {
             incrementSolved();
+            setIsSolved(true);
           }
           const fullContext = [
             ...preMessages,
@@ -205,6 +208,7 @@ function ChatPageInner() {
         onSend={handleSend}
         onRemoveLearning={removeLearning}
         onUpdateLearning={updateLearning}
+        onUpdateLearningTags={updateLearningTags}
         onClearLearnings={clearLearnings}
         onAddPrinciple={addPrinciple}
         onRemovePrinciple={removePrinciple}
@@ -215,6 +219,9 @@ function ChatPageInner() {
         onUpdateLogic={updateLogic}
         hasApiKey={hasApiKey}
         onSettingsClose={() => setHasApiKey(!!getStoredApiKey())}
+        isSolved={isSolved}
+        onNextPuzzle={() => { clearMessages(); setIsSolved(false); setAdditionMode(null); }}
+        onNewChat={() => { clearMessages(); setIsSolved(false); setAdditionMode(null); }}
       />
     </>
   );

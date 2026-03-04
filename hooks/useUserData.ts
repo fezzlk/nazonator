@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducer, useEffect, useCallback } from 'react';
+import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { getLevelByCount } from '@/prompts/constants';
 import { getUserData, saveUserData, DEFAULT_PRINCIPLES, DEFAULT_LOGICS } from '@/lib/userDoc';
 import { MAX_LEARNINGS, MAX_CONTENT_LENGTH } from '@/hooks/useLearnings';
@@ -20,6 +20,7 @@ type Action =
   | { type: 'ADD_LEARNING'; content: string }
   | { type: 'REMOVE_LEARNING'; id: string }
   | { type: 'UPDATE_LEARNING'; id: string; content: string }
+  | { type: 'UPDATE_LEARNING_TAGS'; id: string; tags: string[] }
   | { type: 'CLEAR_LEARNINGS' }
   | { type: 'ADD_PRINCIPLE'; content: string }
   | { type: 'REMOVE_PRINCIPLE'; id: string }
@@ -64,6 +65,13 @@ function reducer(state: State, action: Action): State {
         learnings: state.learnings.map((l) => (l.id === action.id ? { ...l, content: trimmed } : l)),
       };
     }
+    case 'UPDATE_LEARNING_TAGS':
+      return {
+        ...state,
+        learnings: state.learnings.map((l) =>
+          l.id === action.id ? { ...l, tags: action.tags } : l
+        ),
+      };
     case 'CLEAR_LEARNINGS':
       return { ...state, learnings: [] };
     case 'ADD_PRINCIPLE': {
@@ -111,6 +119,7 @@ export interface UseUserDataReturn {
   addLearning: (content: string) => void;
   removeLearning: (id: string) => void;
   updateLearning: (id: string, content: string) => void;
+  updateLearningTags: (id: string, tags: string[]) => void;
   clearLearnings: () => void;
   addPrinciple: (content: string) => void;
   removePrinciple: (id: string) => void;
@@ -129,13 +138,20 @@ export function useUserData(uid: string | null): UseUserDataReturn {
     dataLoading: true,
   });
 
+  // uid のデータが実際にロード済みかを追跡するref
+  // ロード完了前に save effect が空データを書き込むのを防ぐ
+  const loadedUidRef = useRef<string | null>(null);
+
   // Firestore から初回ロード
   useEffect(() => {
     if (!uid) {
+      loadedUidRef.current = null;
       dispatch({ type: 'LOAD', solvedCount: 0, learnings: [], principles: DEFAULT_PRINCIPLES, logics: DEFAULT_LOGICS });
       return;
     }
+    loadedUidRef.current = null; // ロード開始前にリセット
     getUserData(uid).then((data) => {
+      loadedUidRef.current = uid; // ロード完了後にセット（dispatch より先）
       dispatch({
         type: 'LOAD',
         solvedCount: data?.solvedCount ?? 0,
@@ -147,8 +163,9 @@ export function useUserData(uid: string | null): UseUserDataReturn {
   }, [uid]);
 
   // state 変化時に Firestore に保存（楽観的更新）
+  // uid のデータがロード完了している場合のみ保存（ロード前の空データで上書きしない）
   useEffect(() => {
-    if (!uid || state.dataLoading) return;
+    if (!uid || uid !== loadedUidRef.current || state.dataLoading) return;
     saveUserData(uid, {
       solvedCount: state.solvedCount,
       learnings: state.learnings,
@@ -162,6 +179,10 @@ export function useUserData(uid: string | null): UseUserDataReturn {
   const removeLearning = useCallback((id: string) => dispatch({ type: 'REMOVE_LEARNING', id }), []);
   const updateLearning = useCallback(
     (id: string, content: string) => dispatch({ type: 'UPDATE_LEARNING', id, content }),
+    [],
+  );
+  const updateLearningTags = useCallback(
+    (id: string, tags: string[]) => dispatch({ type: 'UPDATE_LEARNING_TAGS', id, tags }),
     [],
   );
   const clearLearnings = useCallback(() => dispatch({ type: 'CLEAR_LEARNINGS' }), []);
@@ -188,6 +209,7 @@ export function useUserData(uid: string | null): UseUserDataReturn {
     addLearning,
     removeLearning,
     updateLearning,
+    updateLearningTags,
     clearLearnings,
     addPrinciple,
     removePrinciple,

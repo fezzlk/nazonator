@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Brain, Trash2, MessageSquare, Plus, Settings, LogOut } from 'lucide-react';
+import { Brain, Trash2, MessageSquare, Plus, Settings, LogOut, BookOpen } from 'lucide-react';
 import type { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
@@ -32,6 +32,7 @@ export default function HomePage() {
   const router = useRouter();
 
   const [solvedCount, setSolvedCount] = useState(0);
+  const [learningsCount, setLearningsCount] = useState(0);
   const [solvedLoading, setSolvedLoading] = useState(true);
   const { sessions, sessionsLoading, removeSession } = useSessionHistory(user?.uid ?? null);
 
@@ -39,6 +40,7 @@ export default function HomePage() {
     if (!user?.uid) return;
     getUserData(user.uid).then((data) => {
       setSolvedCount(data?.solvedCount ?? 0);
+      setLearningsCount(data?.learnings?.length ?? 0);
       setSolvedLoading(false);
     });
   }, [user?.uid]);
@@ -146,6 +148,16 @@ export default function HomePage() {
         >
           <Plus className="w-5 h-5" />
           新しい謎解きを始める
+        </Link>
+
+        {/* アドバイス一覧ボタン */}
+        <Link
+          href="/learnings"
+          className="flex items-center justify-center gap-2 w-full bg-white border border-indigo-100 text-indigo-600 font-semibold text-sm py-3 rounded-2xl shadow-sm hover:bg-indigo-50 transition-all"
+        >
+          <BookOpen className="w-4 h-4" />
+          アドバイス一覧
+          <span className="text-xs text-gray-400 font-normal">({learningsCount}件)</span>
         </Link>
 
         {/* Session list */}
