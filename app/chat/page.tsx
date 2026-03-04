@@ -8,9 +8,11 @@ import { LevelUpNotice } from '@/components/ai/LevelUpNotice';
 import { useChat } from '@/hooks/useChat';
 import { useUserData } from '@/hooks/useUserData';
 import { useExtraction } from '@/hooks/useExtraction';
+import { useReflection } from '@/hooks/useReflection';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
 import { useAuth } from '@/context/AuthContext';
-import { getLevelByCount, SOLVED_TRIGGER_PHRASES } from '@/prompts/constants';
+import { SOLVED_TRIGGER_PHRASES } from '@/prompts/constants';
+import { calcXP, getLevelByXP } from '@/lib/xp';
 import { getStoredApiKey } from '@/lib/apiKey';
 import type { AdditionMode } from '@/types/chat';
 
@@ -55,6 +57,7 @@ function ChatPageInner() {
   } = useUserData(user?.uid ?? null);
 
   const { triggerExtraction } = useExtraction({ learnings, addLearning });
+  const { triggerReflection } = useReflection({ learnings, logics, addLearning, addLogic });
   const { saveCurrentSession, startResumingSession, loadSessionMessages } =
     useSessionHistory(user?.uid ?? null);
 
@@ -62,10 +65,13 @@ function ChatPageInner() {
   const [hasApiKey, setHasApiKey] = useState(() => !!getStoredApiKey());
   const [isSolved, setIsSolved] = useState(false);
   const [isLevelingUp, setIsLevelingUp] = useState(false);
-  const [prevSolvedCount, setPrevSolvedCount] = useState(solvedCount);
+  const prevXP = useRef<number | null>(null);
   const [badgeFlash, setBadgeFlash] = useState(false);
   const prevLearningsLen = useRef(learnings.length);
   const hasLoadedFromUrl = useRef(false);
+
+  const currentXP = calcXP(solvedCount, learnings, principles, logics);
+  const currentLevel = getLevelByXP(currentXP);
 
   // auth guard
   useEffect(() => {
@@ -74,18 +80,21 @@ function ChatPageInner() {
     }
   }, [authLoading, user, router]);
 
-  // レベルアップ検出
+  // レベルアップ検出（XP基準）
   useEffect(() => {
-    if (solvedCount > prevSolvedCount) {
-      const prev = getLevelByCount(prevSolvedCount);
-      const next = getLevelByCount(solvedCount);
-      if (next.level > prev.level) {
+    if (prevXP.current === null) {
+      prevXP.current = currentXP;
+      return;
+    }
+    if (currentXP > prevXP.current) {
+      const prevLevel = getLevelByXP(prevXP.current);
+      if (currentLevel.level > prevLevel.level) {
         setIsLevelingUp(true);
         setTimeout(() => setIsLevelingUp(false), 3000);
       }
-      setPrevSolvedCount(solvedCount);
+      prevXP.current = currentXP;
     }
-  }, [solvedCount, prevSolvedCount]);
+  }, [currentXP, currentLevel.level]);
 
   // バッジフラッシュ検出
   useEffect(() => {
@@ -96,8 +105,6 @@ function ChatPageInner() {
     prevLearningsLen.current = learnings.length;
   }, [learnings.length]);
 
-  const currentLevel = getLevelByCount(solvedCount);
-
   const handleResumeSession = useCallback(
     async (sessionId: string) => {
       const sessionMessages = await loadSessionMessages(sessionId);
@@ -106,7 +113,6 @@ function ChatPageInner() {
     },
     [loadSessionMessages, loadSession, startResumingSession],
   );
-
 
   // URL パラメータ ?id= からセッションを読み込む
   useEffect(() => {
@@ -128,7 +134,7 @@ function ChatPageInner() {
         ]);
       }
 
-      sendMessage(content, currentLevel.level, learnings, principles, logics, currentMode, (fullText) => {
+      sendMessage(content, learnings, principles, logics, currentMode, (fullText) => {
         // 追加モード時: JSONをパースしてカード登録 + 確認メッセージに差し替え
         if (currentMode === 'principles' || currentMode === 'logics') {
           try {
@@ -142,22 +148,22 @@ function ChatPageInner() {
             }
             if (displayMessage) patchLastMessage(displayMessage);
           } catch {
-            // パース失敗時はそのままカード登録
             if (currentMode === 'principles') addPrinciple(fullText.trim());
             else addLogic(fullText.trim());
           }
           return;
         } else {
           // 通常モード: 謎解き完了チェック + テクニック抽出
-          if (checkIfSolved(fullText)) {
-            incrementSolved();
-            setIsSolved(true);
-          }
           const fullContext = [
             ...preMessages,
             { id: `${Date.now()}-u`, role: 'user' as const, content, timestamp: new Date() },
             { id: `${Date.now()}-a`, role: 'assistant' as const, content: fullText, timestamp: new Date() },
           ];
+          if (checkIfSolved(fullText)) {
+            incrementSolved();
+            setIsSolved(true);
+            triggerReflection(fullContext);
+          }
           triggerExtraction(fullContext);
         }
 
@@ -172,7 +178,6 @@ function ChatPageInner() {
     [
       sendMessage,
       patchLastMessage,
-      currentLevel.level,
       learnings,
       principles,
       logics,
@@ -180,6 +185,7 @@ function ChatPageInner() {
       incrementSolved,
       messages,
       triggerExtraction,
+      triggerReflection,
       saveCurrentSession,
       addPrinciple,
       addLogic,

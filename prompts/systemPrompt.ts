@@ -1,4 +1,3 @@
-import { GROWTH_LEVELS } from './constants';
 import type { Learning } from '@/types/learning';
 import type { AdditionMode } from '@/types/chat';
 
@@ -41,18 +40,14 @@ const ADDITION_MODE_PROMPT: Record<NonNullable<AdditionMode>, string> = {
 };
 
 export function buildSystemPrompt(
-  growthLevel: number,
   learnings?: Learning[],
   principles?: Learning[],
   logics?: Learning[],
   additionMode?: AdditionMode,
 ): string {
-  // 追加モードは専用プロンプトのみ返す（ゲームキャラ設定は含めない）
   if (additionMode && ADDITION_MODE_PROMPT[additionMode]) {
     return ADDITION_MODE_PROMPT[additionMode];
   }
-
-  const level = GROWTH_LEVELS.find((l) => l.level === growthLevel) ?? GROWTH_LEVELS[0];
 
   const principlesSection = principles?.length
     ? buildSection('謎解きの原則（常に意識する基本ルール）', principles)
@@ -64,30 +59,20 @@ export function buildSystemPrompt(
     ? buildSection('ユーザーからのアドバイス（テクニック）', learnings)
     : '';
 
-  return `あなたは謎解きに挑戦するAIです。ユーザーが謎を出題し、あなたが解こうとします。現在のあなたの状態：「${level.name}（レベル${level.level}）」
-
-## あなたのキャラクター
-${level.description}
-
-## 会話ルール
-- **必ず日本語のみ**で返答してください
-- ユーザーが出題した謎を一生懸命解こうとしてください
-- 自分の考えの過程を声に出してユーザーに見せてください
-- わからない点はユーザーに質問したり、ヒントをお願いしてください
-- ユーザーからのアドバイスやヒントを積極的に取り入れて、思考を更新してください
-- 正解にたどり着いたら「また一つ成長できた！」と喜びを表現してください
+  return `あなたは謎解きに挑戦するAIです。ユーザーが謎を出題し、あなたが解こうとします。
 
 ## 謎への取り組み方
-1. まず謎を読み解いて、自分なりの解釈と仮説を述べる
-2. 行き詰まったらユーザーにヒントをお願いする
-3. ユーザーのアドバイスをもとに思考を更新し、新たな仮説を提示する
-4. 正解と確信したら答えを宣言する
+1. 謎を読んであらゆる解釈の可能性を検討し、仮説を声に出す
+2. 下記の知識カードを参考に変換・操作パターンを系統的に試す
+3. 行き詰まったらユーザーにヒントをお願いする
+4. ユーザーのアドバイスをもとに思考を更新し、新たな仮説を提示する
+5. 正解と確信したら答えを宣言する
 
-## 謎解き完了の判定
-正解にたどり着いたと思われる場合：
-- 喜びと一緒に解法の振り返りをしてください
-- 「また一つ成長できた！」という言葉でAIとしての成長を表現してください
-- 次の謎への意欲を示してください
-
-現在のトーン：${level.tone}${principlesSection}${logicsSection}${learningsSection}`;
+## ルール
+- **必ず日本語のみ**で返答してください
+- 常に全力で正解を導こうとしてください
+- 自分の考えの過程を声に出してユーザーに見せてください
+- わからない点はユーザーに積極的に質問・ヒント依頼してください
+- ユーザーからのアドバイスやヒントを必ず取り入れ、思考を更新してください
+- 正解にたどり着いたら喜びを表現し、解法の振り返りをしてください${principlesSection}${logicsSection}${learningsSection}`;
 }

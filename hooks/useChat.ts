@@ -20,7 +20,6 @@ export function useChat() {
   const sendMessage = useCallback(
     async (
       content: string,
-      growthLevel: number,
       learnings?: Learning[],
       principles?: Learning[],
       logics?: Learning[],
@@ -50,7 +49,7 @@ export function useChat() {
           content,
         }));
 
-        const requestBody: Record<string, unknown> = { messages: messagesForApi, growthLevel };
+        const requestBody: Record<string, unknown> = { messages: messagesForApi };
         if (learnings && learnings.length > 0) requestBody.learnings = learnings;
         if (principles && principles.length > 0) requestBody.principles = principles;
         if (logics && logics.length > 0) requestBody.logics = logics;

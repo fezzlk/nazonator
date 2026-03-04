@@ -1,7 +1,6 @@
 'use client';
 
 import { useReducer, useEffect, useCallback, useRef } from 'react';
-import { getLevelByCount } from '@/prompts/constants';
 import { getUserData, saveUserData, DEFAULT_PRINCIPLES, DEFAULT_LOGICS } from '@/lib/userDoc';
 import { MAX_LEARNINGS, MAX_CONTENT_LENGTH } from '@/hooks/useLearnings';
 import type { Learning } from '@/types/learning';
@@ -220,5 +219,3 @@ export function useUserData(uid: string | null): UseUserDataReturn {
   };
 }
 
-// 外部からも参照できるようにエクスポート
-export { getLevelByCount };

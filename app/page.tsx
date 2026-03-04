@@ -8,7 +8,7 @@ import type { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
 import { getUserData } from '@/lib/userDoc';
-import { getLevelByCount } from '@/prompts/constants';
+import { getLevelByXP } from '@/lib/xp';
 import { SettingsPanel } from '@/components/settings/SettingsPanel';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +33,7 @@ export default function HomePage() {
 
   const [solvedCount, setSolvedCount] = useState(0);
   const [learningsCount, setLearningsCount] = useState(0);
+  const [totalCards, setTotalCards] = useState(0);
   const [solvedLoading, setSolvedLoading] = useState(true);
   const { sessions, sessionsLoading, removeSession } = useSessionHistory(user?.uid ?? null);
 
@@ -41,11 +42,16 @@ export default function HomePage() {
     getUserData(user.uid).then((data) => {
       setSolvedCount(data?.solvedCount ?? 0);
       setLearningsCount(data?.learnings?.length ?? 0);
+      setTotalCards(
+        (data?.learnings?.length ?? 0) +
+        (data?.principles?.length ?? 0) +
+        (data?.logics?.length ?? 0)
+      );
       setSolvedLoading(false);
     });
   }, [user?.uid]);
 
-  const currentLevel = getLevelByCount(solvedCount);
+  const currentLevel = getLevelByXP(solvedCount * 3 + totalCards);
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);

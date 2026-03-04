@@ -33,7 +33,7 @@ function pseudoStream(content: string): Response {
 export async function POST(req: NextRequest) {
   try {
     const body: ChatRequest = await req.json();
-    const { messages, growthLevel, learnings, principles, logics, additionMode, apiKey } = body;
+    const { messages, learnings, principles, logics, additionMode, apiKey } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 400 });
     }
 
-    const systemPrompt = buildSystemPrompt(growthLevel ?? 1, learnings, principles, logics, additionMode);
+    const systemPrompt = buildSystemPrompt(learnings, principles, logics, additionMode);
     const openai = getOpenAIClient(apiKey);
 
     const systemMsg: ChatCompletionMessageParam = { role: 'system', content: systemPrompt };

@@ -11,7 +11,6 @@ export type AdditionMode = 'principles' | 'logics' | null;
 
 export interface ChatRequest {
   messages: Omit<Message, 'id' | 'timestamp'>[];
-  growthLevel: number;
   learnings?: import('@/types/learning').Learning[];
   principles?: import('@/types/learning').Learning[];
   logics?: import('@/types/learning').Learning[];
