@@ -25,6 +25,7 @@ export function useChat() {
       logics?: Learning[],
       additionMode?: AdditionMode,
       onComplete?: (fullText: string) => void,
+      uid?: string,
     ) => {
       if (!content.trim() || state.isLoading) return;
 
@@ -54,6 +55,7 @@ export function useChat() {
         if (principles && principles.length > 0) requestBody.principles = principles;
         if (logics && logics.length > 0) requestBody.logics = logics;
         if (additionMode) requestBody.additionMode = additionMode;
+        if (uid) requestBody.uid = uid;
         const storedApiKey = getStoredApiKey();
         if (storedApiKey) requestBody.apiKey = storedApiKey;
 

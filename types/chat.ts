@@ -16,6 +16,7 @@ export interface ChatRequest {
   logics?: import('@/types/learning').Learning[];
   additionMode?: AdditionMode;
   apiKey?: string;
+  uid?: string;
 }
 
 export interface ChatState {

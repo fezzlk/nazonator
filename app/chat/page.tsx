@@ -10,6 +10,7 @@ import { useUserData } from '@/hooks/useUserData';
 import { useExtraction } from '@/hooks/useExtraction';
 import { useReflection } from '@/hooks/useReflection';
 import { useAssociation } from '@/hooks/useAssociation';
+import { useCardEmbed } from '@/hooks/useCardEmbed';
 import { useSessionHistory } from '@/hooks/useSessionHistory';
 import { useAuth } from '@/context/AuthContext';
 import { SOLVED_TRIGGER_PHRASES } from '@/prompts/constants';
@@ -60,6 +61,7 @@ function ChatPageInner() {
   const { triggerExtraction } = useExtraction({ learnings, addLearning });
   const { triggerReflection } = useReflection({ learnings, logics, addLearning, addLogic });
   const { triggerAssociation } = useAssociation({ learnings, logics, addLearning, addLogic });
+  useCardEmbed({ uid: user?.uid ?? null, learnings, principles, logics });
   const { saveCurrentSession, startResumingSession, loadSessionMessages } =
     useSessionHistory(user?.uid ?? null);
 
@@ -194,7 +196,7 @@ function ChatPageInner() {
           { id: `${Date.now()}-a`, role: 'assistant' as const, content: fullText, timestamp: new Date() },
         ];
         saveCurrentSession(fullContext);
-      });
+      }, user?.uid);
     },
     [
       sendMessage,
@@ -210,6 +212,7 @@ function ChatPageInner() {
       saveCurrentSession,
       addPrinciple,
       addLogic,
+      user?.uid,
     ],
   );
 

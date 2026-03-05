@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOpenAIClient } from '@/lib/openai';
 import { buildSystemPrompt } from '@/prompts/systemPrompt';
 import { TOOLS, dispatchTool } from '@/lib/tools';
+import { getPineconeIndex, isPineconeEnabled } from '@/lib/pinecone';
+import { embedText } from '@/lib/embedding';
+import { DEFAULT_PRINCIPLES, DEFAULT_LOGICS } from '@/lib/userDoc';
 import type { ChatRequest } from '@/types/chat';
+import type { Learning } from '@/types/learning';
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 const MAX_TOOL_ROUNDS = 3;
@@ -30,10 +34,45 @@ function pseudoStream(content: string): Response {
   });
 }
 
+async function retrieveRelevantCards(
+  query: string,
+  uid: string,
+  apiKey: string,
+): Promise<{ learnings: Learning[]; principles: Learning[]; logics: Learning[] }> {
+  try {
+    const index = getPineconeIndex();
+    const vector = await embedText(query, apiKey);
+
+    const [lRes, pRes, loRes] = await Promise.all([
+      index.query({ vector, topK: 8, filter: { uid: { $eq: uid }, category: { $eq: 'learnings' } }, includeMetadata: true }),
+      index.query({ vector, topK: 5, filter: { uid: { $eq: uid }, category: { $eq: 'principles' } }, includeMetadata: true }),
+      index.query({ vector, topK: 5, filter: { uid: { $eq: uid }, category: { $eq: 'logics' } }, includeMetadata: true }),
+    ]);
+
+    const toCards = (matches: typeof lRes.matches): Learning[] =>
+      matches
+        .filter((m) => m.metadata?.content)
+        .map((m) => ({
+          id: String(m.metadata!.cardId ?? m.id),
+          content: String(m.metadata!.content),
+          createdAt: 0,
+        }));
+
+    return {
+      learnings: toCards(lRes.matches),
+      principles: [...DEFAULT_PRINCIPLES, ...toCards(pRes.matches)],
+      logics: [...DEFAULT_LOGICS, ...toCards(loRes.matches)],
+    };
+  } catch (e) {
+    console.error('[RAG retrieval error]', e);
+    return { learnings: [], principles: DEFAULT_PRINCIPLES, logics: DEFAULT_LOGICS };
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body: ChatRequest = await req.json();
-    const { messages, learnings, principles, logics, additionMode, apiKey } = body;
+    const { messages, learnings, principles, logics, additionMode, apiKey, uid } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
@@ -43,7 +82,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 400 });
     }
 
-    const systemPrompt = buildSystemPrompt(learnings, principles, logics, additionMode);
+    // RAG: Pineconeが設定済みかつ通常モードかつuidがある場合は関連カードを意味検索で取得
+    let resolvedLearnings = learnings;
+    let resolvedPrinciples = principles;
+    let resolvedLogics = logics;
+
+    if (!additionMode && uid && isPineconeEnabled()) {
+      const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+      if (lastUserMsg) {
+        const retrieved = await retrieveRelevantCards(lastUserMsg.content, uid, apiKey);
+        resolvedLearnings = retrieved.learnings;
+        resolvedPrinciples = retrieved.principles;
+        resolvedLogics = retrieved.logics;
+      }
+    }
+
+    const systemPrompt = buildSystemPrompt(resolvedLearnings, resolvedPrinciples, resolvedLogics, additionMode);
     const openai = getOpenAIClient(apiKey);
 
     const systemMsg: ChatCompletionMessageParam = { role: 'system', content: systemPrompt };
