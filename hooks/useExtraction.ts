@@ -7,9 +7,11 @@ import { getStoredApiKey } from '@/lib/apiKey';
 export function useExtraction({
   learnings,
   addLearning,
+  onNewCards,
 }: {
   learnings: Learning[];
   addLearning: (content: string) => void;
+  onNewCards?: (cards: string[]) => void;
 }) {
   const isExtracting = useRef(false);
 
@@ -35,14 +37,16 @@ export function useExtraction({
         if (!res.ok) return;
         const { newCards } = await res.json();
         const remaining = MAX_LEARNINGS - learnings.length;
-        (newCards as string[]).slice(0, remaining).forEach((card) => addLearning(card));
+        const added = (newCards as string[]).slice(0, remaining);
+        added.forEach((card) => addLearning(card));
+        if (added.length > 0) onNewCards?.(added);
       } catch {
         // silent fail
       } finally {
         isExtracting.current = false;
       }
     },
-    [learnings, addLearning],
+    [learnings, addLearning, onNewCards],
   );
 
   return { triggerExtraction };

@@ -58,9 +58,12 @@ function ChatPageInner() {
     updateLogic,
   } = useUserData(user?.uid ?? null);
 
-  const { triggerExtraction } = useExtraction({ learnings, addLearning });
-  const { triggerReflection } = useReflection({ learnings, logics, addLearning, addLogic });
   const { triggerAssociation } = useAssociation({ learnings, logics, addLearning, addLogic });
+  const handleNewCards = useCallback((cards: string[]) => {
+    triggerAssociation(cards);
+  }, [triggerAssociation]);
+  const { triggerExtraction } = useExtraction({ learnings, addLearning, onNewCards: handleNewCards });
+  const { triggerReflection } = useReflection({ learnings, logics, addLearning, addLogic, onNewCards: handleNewCards });
   useCardEmbed({ uid: user?.uid ?? null, learnings, principles, logics });
   const { saveCurrentSession, startResumingSession, loadSessionMessages } =
     useSessionHistory(user?.uid ?? null);
@@ -73,8 +76,6 @@ function ChatPageInner() {
   const [badgeFlash, setBadgeFlash] = useState(false);
   const prevLearningsLen = useRef(learnings.length);
   const hasLoadedFromUrl = useRef(false);
-  // セッション中に追加されたカードのみ associate に渡すための追跡
-  const knownCardIds = useRef<Set<string> | null>(null);
 
   const currentXP = calcXP(solvedCount, learnings, principles, logics);
   const currentLevel = getLevelByXP(currentXP);
@@ -111,22 +112,6 @@ function ChatPageInner() {
     prevLearningsLen.current = learnings.length;
   }, [learnings.length]);
 
-  // 初期ロード後、セッション中に追加された新規カードを検出して associate を発火
-  useEffect(() => {
-    if (dataLoading) return;
-    const allCurrent = [...learnings, ...logics];
-    if (knownCardIds.current === null) {
-      // 初回: 既存カードを全て既知として記録し、association はしない
-      knownCardIds.current = new Set(allCurrent.map((l) => l.id));
-      return;
-    }
-    const known = knownCardIds.current;
-    const newCards = allCurrent.filter((l) => !known.has(l.id));
-    if (newCards.length > 0) {
-      newCards.forEach((l) => known.add(l.id));
-      triggerAssociation(newCards.map((l) => l.content));
-    }
-  }, [learnings, logics, dataLoading, triggerAssociation]);
 
   const handleResumeSession = useCallback(
     async (sessionId: string) => {

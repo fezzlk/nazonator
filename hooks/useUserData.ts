@@ -2,7 +2,7 @@
 
 import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { getUserData, saveUserData, DEFAULT_PRINCIPLES, DEFAULT_LOGICS } from '@/lib/userDoc';
-import { MAX_LEARNINGS, MAX_CONTENT_LENGTH } from '@/hooks/useLearnings';
+import { MAX_LEARNINGS, MAX_LOGICS, MAX_CONTENT_LENGTH } from '@/hooks/useLearnings';
 import type { Learning } from '@/types/learning';
 
 interface State {
@@ -36,6 +36,11 @@ function makeItem(content: string): Learning {
   };
 }
 
+function isDuplicate(existing: Learning[], newContent: string): boolean {
+  const trimmed = newContent.trim();
+  return existing.some((l) => l.content === trimmed);
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'LOAD':
@@ -51,6 +56,7 @@ function reducer(state: State, action: Action): State {
     case 'ADD_LEARNING': {
       const trimmed = action.content.trim().slice(0, MAX_CONTENT_LENGTH);
       if (!trimmed) return state;
+      if (isDuplicate(state.learnings, trimmed)) return state;
       const base = state.learnings.length >= MAX_LEARNINGS ? state.learnings.slice(1) : state.learnings;
       return { ...state, learnings: [...base, makeItem(action.content)] };
     }
@@ -76,6 +82,7 @@ function reducer(state: State, action: Action): State {
     case 'ADD_PRINCIPLE': {
       const trimmed = action.content.trim().slice(0, MAX_CONTENT_LENGTH);
       if (!trimmed) return state;
+      if (isDuplicate(state.principles, trimmed)) return state;
       return { ...state, principles: [...state.principles, makeItem(action.content)] };
     }
     case 'REMOVE_PRINCIPLE':
@@ -91,6 +98,8 @@ function reducer(state: State, action: Action): State {
     case 'ADD_LOGIC': {
       const trimmed = action.content.trim().slice(0, MAX_CONTENT_LENGTH);
       if (!trimmed) return state;
+      if (isDuplicate(state.logics, trimmed)) return state;
+      if (state.logics.length >= MAX_LOGICS) return state;
       return { ...state, logics: [...state.logics, makeItem(action.content)] };
     }
     case 'REMOVE_LOGIC':

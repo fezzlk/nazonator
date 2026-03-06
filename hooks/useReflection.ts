@@ -9,11 +9,13 @@ export function useReflection({
   logics,
   addLearning,
   addLogic,
+  onNewCards,
 }: {
   learnings: Learning[];
   logics: Learning[];
   addLearning: (content: string) => void;
   addLogic: (content: string) => void;
+  onNewCards?: (cards: string[]) => void;
 }) {
   const isReflecting = useRef(false);
 
@@ -42,15 +44,19 @@ export function useReflection({
 
         const { learnings: newLearnings, logics: newLogics } = await res.json();
         const remainingLearnings = MAX_LEARNINGS - learnings.length;
-        (newLearnings as string[]).slice(0, remainingLearnings).forEach((c) => addLearning(c));
-        (newLogics as string[]).forEach((c) => addLogic(c));
+        const addedL = (newLearnings as string[]).slice(0, remainingLearnings);
+        const addedLogics = (newLogics as string[]);
+        addedL.forEach((c) => addLearning(c));
+        addedLogics.forEach((c) => addLogic(c));
+        const allAdded = [...addedL, ...addedLogics];
+        if (allAdded.length > 0) onNewCards?.(allAdded);
       } catch {
         // silent fail
       } finally {
         isReflecting.current = false;
       }
     },
-    [learnings, logics, addLearning, addLogic],
+    [learnings, logics, addLearning, addLogic, onNewCards],
   );
 
   return { triggerReflection };

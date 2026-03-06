@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import type { Learning } from '@/types/learning';
-import { MAX_LEARNINGS } from './useLearnings';
+import { MAX_LEARNINGS, MAX_LOGICS } from './useLearnings';
 import { getStoredApiKey } from '@/lib/apiKey';
 
 export function useAssociation({
@@ -40,8 +40,10 @@ export function useAssociation({
 
         const { learnings: newL, logics: newLogics } = await res.json();
         const remainingLearnings = MAX_LEARNINGS - learnings.length;
+        const remainingLogics = MAX_LOGICS - logics.length;
+
         (newL as string[]).slice(0, remainingLearnings).forEach((c) => addLearning(c));
-        (newLogics as string[]).forEach((c) => addLogic(c));
+        (newLogics as string[]).slice(0, remainingLogics).forEach((c) => addLogic(c));
       } catch {
         // silent fail
       } finally {
