@@ -1,0 +1,30 @@
+name: AI application checks
+
+on:
+  pull_request:
+    paths: ['app/**', 'components/**', 'lib/**', 'prompts/**', 'package.json', 'pnpm-lock.yaml', '.github/workflows/ci.yml']
+  push:
+    branches: [main]
+    paths: ['app/**', 'components/**', 'lib/**', 'prompts/**', 'package.json', 'pnpm-lock.yaml', '.github/workflows/ci.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nazonator-ci
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
